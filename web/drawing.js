@@ -12,6 +12,7 @@
  // As fontes do PDF e os documentos confirmados são imutáveis entre edições.
  const sourceTexts=new WeakMap(),textMetrics=new WeakMap(),fontBaselines=new Map(),linePaths=new WeakMap(),textMaps=new WeakMap();
  let revision=0,lastActivity=0,navigationTimer,navigating=false,loadedDoc=null;
+ let assetKey='',assetPromise=null;
  const IMAGE_IDLE_MS=3000;
  function activity(){lastActivity=Date.now();}
  function editableText(source){if(!sourceTexts.has(source))sourceTexts.set(source,window.PDFText.editable(source));return sourceTexts.get(source);}
@@ -342,34 +343,39 @@
  function updateBackground(){
   const edited=new Set(model.doc.objects.map(o=>o.pdf_line_id).filter(Boolean)),excluded=(model.doc.pdf_lines||[]).filter(source=>edited.has(source.id)).map(source=>source.operator_index);
   const doc=model.doc,key=[doc.background_ref||'',doc.pdf_text_background_ref||'',doc.pdf_source_ref||'',excluded.join(',')].join('|');if(backgroundRef===key&&!backgroundError)return;
-  if(backgroundRef?.split('|')[0]!==key.split('|')[0]){background=null;textBackground=null;}backgroundRef=key;backgroundError=null;
+  if(backgroundRef?.split('|')[0]!==key.split('|')[0]){background=null;textBackground=null;}backgroundRef=key;backgroundError=null;callbacks?.onBackgroundStatus?.({loading:true,error:''});
   const read=ref=>ref?new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(Error('Não foi possível carregar a imagem do croqui. Preserve ou restaure a pasta dados/media da obra. As edições continuam guardadas.'));image.src='/media/'+encodeURIComponent(ref);}):Promise.resolve(null);
   const fromPDF=preview=>window.PDFSource.render(doc.pdf_source_ref,doc.background_source,excluded,(doc.pdf_texts||[]).length>0,preview).then(p=>[p.original,p.clean]);
-  const request=excluded.length?fromPDF(true):Promise.all([read(doc.background_ref),read(doc.pdf_text_background_ref)]).catch(error=>{
+  const refs=[doc.background_ref||'',doc.pdf_text_background_ref||''].join('|');
+  if(!assetPromise||assetKey!==refs){assetKey=refs;assetPromise=Promise.all([read(doc.background_ref),read(doc.pdf_text_background_ref)]);assetPromise.catch(()=>{if(assetKey===refs)assetPromise=null;});}
+  const canonical=assetPromise.catch(error=>{
    if(!doc.pdf_source_ref||!window.PDFSource)throw error;
    // Reconstrói a imagem ausente a partir do PDF preservado, sem apagar edições.
-   return fromPDF(false).then(pictures=>[...pictures,true]).catch(()=>{throw Error('A imagem e o PDF original do croqui não puderam ser abertos. Restaure a pasta dados/media ou o backup da obra. As edições continuam guardadas.');});
+   return window.PDFSource.render(doc.pdf_source_ref,doc.background_source,[],(doc.pdf_texts||[]).length>0,false).then(pictures=>[pictures.original,pictures.clean,true]).catch(()=>{throw Error('A imagem e o PDF original do croqui não puderam ser abertos. Restaure a pasta dados/media ou vincule o arquivo original. As edições continuam guardadas.');});
   });
+  const request=canonical.then(pictures=>pictures[2]||!excluded.length?pictures:fromPDF(true));
   backgroundPromise=request.then(async([image,clean,recovered])=>{if(backgroundRef!==key)return;
    background=image;textBackground=clean;
    if(recovered&&callbacks?.onRecover){
     const refs=await callbacks.onRecover(image,clean);
-    if(backgroundRef!==key||model.doc!==doc)return;
-    model.commit({...doc,background_ref:refs.original,pdf_text_background_ref:refs.clean});changed();
+    if(backgroundRef!==key)return;
+    // Mantém as edições feitas enquanto a recuperação estava em andamento.
+    assetKey='';assetPromise=null;backgroundRef=null;lastRendered='';model.commit({...model.doc,background_ref:refs.original,pdf_text_background_ref:refs.clean});changed();
    }
+   if(backgroundRef===key){callbacks?.onBackgroundStatus?.({loading:false,error:''});if(!dirty&&el('drawingStatus'))el('drawingStatus').textContent=image?'Página carregada. Selecione textos, símbolos ou linhas para editar.':'Importe o PDF ou uma imagem do projeto.';}
    draw();resize();
-  }).catch(error=>{if(backgroundRef===key){backgroundError=error;el('drawingStatus').textContent=error.message;}});
+  }).catch(error=>{if(backgroundRef===key){backgroundError=error;callbacks?.onBackgroundStatus?.({loading:false,error:error.message});if(el('drawingStatus'))el('drawingStatus').textContent=error.message;}});
  }
  function changed(){dirty=true;revision++;activity();loadedKey='';loadedDoc={...model.doc,objects:clone(model.doc.objects)};updateBackground();callbacks?.onChange(loadedDoc);refreshSearch();draw();el('drawingStatus').textContent='Salvando alterações do croqui…';scheduleImage();}
  function scheduleImage(){clearTimeout(timer);timer=setTimeout(autoFlush,IMAGE_IDLE_MS);}
  function busy(){return interacting()||pan||navigating||Date.now()-lastActivity<IMAGE_IDLE_MS;}
  function autoFlush(){if(!dirty)return;if(busy()){scheduleImage();return;}flush({automatic:true}).catch(error=>{el('drawingStatus').textContent='Edição guardada; imagem do croqui pendente: '+error.message;});}
- async function flush({automatic=false}={}){
+ async function flush({automatic=false,allowMissing=false}={}){
   clearTimeout(timer);if(!callbacks||!canvas||!dirty)return;
   if(automatic&&busy()){scheduleImage();return;}
-  if(inFlight){await inFlight;return flush({automatic});}
-  inFlight=(async()=>{let waiting;do{waiting=backgroundPromise;await waiting;}while(waiting!==backgroundPromise);if(!dirty||(automatic&&busy()))return;if(backgroundError)throw backgroundError;
-   const snapshot=model.doc,serial=revision,published=loadedDoc,signature=JSON.stringify(snapshot);if(signature===lastRendered){dirty=false;return;}
+  if(inFlight){try{await inFlight;}catch(error){if(!allowMissing||!backgroundError)throw error;}return flush({automatic,allowMissing});}
+  inFlight=(async()=>{let waiting;do{waiting=backgroundPromise;await waiting;}while(waiting!==backgroundPromise);if(!dirty||(automatic&&busy()))return;if(backgroundError){if(allowMissing)return;throw backgroundError;}
+   const snapshot=model.doc,serial=revision,published=loadedDoc,signature=JSON.stringify(snapshot);if(signature===lastRendered){dirty=false;callbacks?.onUnchanged?.(published);el('drawingStatus').textContent='Alterações salvas automaticamente.';return;}
    const edited=new Set(snapshot.objects.map(o=>o.pdf_line_id).filter(Boolean)),excluded=(snapshot.pdf_lines||[]).filter(o=>edited.has(o.id)).map(o=>o.operator_index);
    const pictures=excluded.length?await window.PDFSource.render(snapshot.pdf_source_ref,snapshot.background_source,excluded,(snapshot.pdf_texts||[]).length>0):{original:background,clean:textBackground};
    if(automatic&&(revision!==serial||busy()))return;
@@ -377,7 +383,7 @@
    const data=await window.CroquiRender.png(snapshot,pictures);
    if(automatic&&(revision!==serial||busy()))return;
    await callbacks.onImage(data,signature,published);if(revision===serial){lastRendered=signature;dirty=false;el('drawingStatus').textContent='Alterações salvas automaticamente.';}
-  })().finally(()=>{inFlight=null;});await inFlight;if(dirty){if(automatic)scheduleImage();else return flush();}
+  })().finally(()=>{inFlight=null;});await inFlight;if(allowMissing&&backgroundError)return;if(dirty){if(automatic)scheduleImage();else return flush();}
  }
  function load(doc,fallbackRef,needsImage=false){
   if(doc&&doc===loadedDoc&&!backgroundError){if(needsImage&&!dirty){dirty=true;lastRendered='';scheduleImage();}return;}

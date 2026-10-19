@@ -29,7 +29,7 @@ import learning
 from records_sync import RecordSync
 
 APP_ID='engelmig-fechamento-v1'
-VERSION='11.3.0'
+VERSION='11.4.0'
 LEARNING_LOCK=threading.RLock()
 TOKEN=secrets.token_urlsafe(32)
 DATA_DIR=Path(os.environ.get('ENGELMIG_DATA_DIR',ROOT/'dados'))
@@ -425,6 +425,11 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(data,dict): raise ValueError('Dados inválidos.')
             if self.path=='/api/media':return self.send(put_media(data,DATA_DIR/'media'))
             if self.path=='/api/project-pdf':return self.send(put_pdf(data,DATA_DIR/'media'))
+            if self.path=='/api/media-check':
+                refs=data.get('refs',[])
+                if not isinstance(refs,list) or len(refs)>300 or any(not isinstance(ref,str) or not ASSET_RE.fullmatch(ref) for ref in refs):raise ValueError('Lista de arquivos inválida.')
+                present=available_media()
+                return self.send({'missing':[ref for ref in refs if ref not in present or (DATA_DIR/'media'/ref).stat().st_size<12]})
             if self.path=='/api/book-check':return self.send(normalize_book(data.get('book'),calculate(data.get('services',[]))['services'],available_media()))
             if self.path=='/api/book-preview':return self.send(preview_book(data))
             if self.path=='/api/draft-clear':return self.send(clear_draft(data))
@@ -441,6 +446,7 @@ class Handler(BaseHTTPRequestHandler):
                 conf=clean_settings(data);save_record('settings',dict(conf,id='config'))
                 if SYNC is not None:SYNC.trigger()
                 return self.send(conf)
+            if self.path=='/api/repository-check':return self.send(updates.repository_status(clean_settings(data)))
             if self.path=='/api/records-sync':return self.send(record_sync().trigger())
             if self.path=='/api/update-check':return self.send(updates.check(ROOT,settings(),VERSION))
             if self.path=='/api/update-notice':return self.send(updates.notice(ROOT,settings(),VERSION,force=data.get('force') is True))

@@ -66,7 +66,7 @@
   const key=String(data.key||data.remote_version||data.remote);
   if(sessionStorage.getItem('engelmig-update-dismissed')===key)return;
   notification=data;
-  banner.innerHTML=`<div><strong>Atualização disponível${data.remote_version?' · versão '+esc(data.remote_version):''}</strong><span>Nova Release publicada. A instalação e a reinicialização são automáticas.</span></div><button id="notificationOpen" class="primary">Ver atualização</button><button id="notificationDismiss" class="text-button" aria-label="Dispensar aviso de atualização">×</button>`;
+  banner.innerHTML=`<div><strong>Atualização disponível${data.remote_version?' · versão '+esc(data.remote_version):''}</strong><span>${data.mode==='branch'?'Nova versão na branch '+esc(data.branch)+'.':'Nova Release publicada.'} A instalação e a reinicialização são automáticas.</span></div><button id="notificationOpen" class="primary">Ver atualização</button><button id="notificationDismiss" class="text-button" aria-label="Dispensar aviso de atualização">×</button>`;
   banner.hidden=false;
  }
  async function checkNotice(force=false){
@@ -93,5 +93,5 @@
   window.addEventListener('online',()=>{flush(true).catch(()=>{});checkNotice();});
   window.addEventListener('pagehide',()=>{if(!ready||!S.token)return;const body=JSON.stringify(payload());try{localStorage.setItem(localKey,JSON.stringify({...payload(),updated_at:new Date().toISOString()}));if(new Blob([body]).size<60000)fetch('/api/draft',{method:'POST',headers:{'Content-Type':'application/json','X-App-Token':S.token},body,keepalive:true}).catch(()=>{});}catch{}});
  }
- template();bind();window.Training={init,schedule,flush,pause,refreshPatterns:refresh,cancel:()=>{clearTimeout(timer);ready=false;},resume:()=>{ready=true;schedule();},sourcePanel,onTab:name=>{if(name==='profiles')run(refresh)();if(name==='history')run(drafts)();},checkNotice};
+ template();bind();window.Training={init,schedule,flush,pause,refreshPatterns:refresh,cancel:()=>{clearTimeout(timer);ready=false;},resume:()=>{ready=true;schedule();},sourcePanel,onTab:name=>{if(name==='profiles')run(refresh)();if(name==='history')run(drafts)();},checkNotice,clearNotice:()=>{notification=null;displayNotice({available:false});}};
 })();

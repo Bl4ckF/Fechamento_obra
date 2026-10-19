@@ -24,6 +24,8 @@ def clean_drawing(data,available=None):
         return round(n,3)
     out={'version':1,'width':1200,'height':800,'objects':[],'background_ref':None}
     if data.get('background_ref'):out['background_ref']=photo_ref(data['background_ref'],available)
+    # PDFs sem linhas vetoriais também precisam do original para recuperar o fundo.
+    if data.get('pdf_source_ref'):out['pdf_source_ref']=pdf_ref(data['pdf_source_ref'],available)
     source=data.get('background_source')
     if source and out['background_ref']:
         if not isinstance(source,dict):raise ValueError('Origem do fundo do croqui inválida.')

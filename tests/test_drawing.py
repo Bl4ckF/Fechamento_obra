@@ -4,6 +4,12 @@ from drawing import clean_drawing, symbol_catalog
 
 
 class DrawingTests(unittest.TestCase):
+    def test_original_pdf_preserved_without_vector_lines(self):
+        ref='a'*64+'.png';pdf='b'*64+'.pdf'
+        doc={'version':1,'objects':[],'background_ref':ref,'background_source':{'kind':'pdf','name':'texto.pdf','page':1},'pdf_source_ref':pdf,'pdf_lines':[]}
+        saved=clean_drawing(doc,{ref,pdf})
+        self.assertEqual(saved['pdf_source_ref'],pdf)
+        self.assertEqual(clean_drawing(saved,{ref,pdf}),saved)
     def setUp(self):
         self.doc={'version':1,'objects':[{'id':'line1','type':'line','x1':10,'y1':20,'x2':300,'y2':400,'color':'#ff0000','width':8,'dash':'dashed','arrow':'both'},{'id':'label','type':'text','x1':60,'y1':80,'text':'Ponto 1','size':28,'color':'#123456'}]}
     def test_custom_lines_text_and_style_survive_roundtrip(self):

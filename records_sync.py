@@ -36,7 +36,7 @@ class RecordSync:
         self.wake=threading.Event()
         self.stopping=threading.Event()
         self.thread=None
-        self.state={'running':False,'last_success':None,'error':'','pending':None,'uploaded':0,'downloaded':0}
+        self.state={'running':False,'last_success':None,'error':'','pending':None,'uploaded':0,'downloaded':0,'configuration':None}
         try:
             saved=json.loads((self.folder/'estado.json').read_text(encoding='utf-8'))
             self.state.update({k:saved[k] for k in self.state if k in saved})
@@ -46,7 +46,10 @@ class RecordSync:
 
     def status(self):
         conf=self.settings()
-        return {**self.state,'enabled':bool(conf.get('sync_enabled',True)),
+        state=dict(self.state)
+        if state.get('configuration')!=[conf['repository'],conf.get('sync_branch','registros-materiais')]:
+            state.update(error='',last_success=None,pending=None,uploaded=0,downloaded=0)
+        return {**state,'enabled':bool(conf.get('sync_enabled',True)),
                 'repository':conf['repository'],'branch':conf.get('sync_branch','registros-materiais'),'interval_seconds':60}
 
     def save_state(self):
@@ -72,15 +75,26 @@ class RecordSync:
             raise SyncError('A conexão com o repositório demorou demais. Os registros continuam salvos e serão reenviados.')
         if check and result.returncode:
             detail=result.stderr.decode('utf-8','replace').strip()[-900:]
-            raise SyncError('Não foi possível sincronizar. Confira internet, repositório e credencial Git com permissão de escrita. '+detail)
+            raise SyncError(self.connection_error(detail))
         return result
+
+    @staticmethod
+    def connection_error(detail):
+        lower=detail.lower()
+        if any(word in lower for word in ('repository not found','authentication failed','could not read username','terminal prompts disabled')):
+            return 'O Git não conseguiu acessar o repositório com a conta deste computador. Confira o endereço e autentique uma conta com acesso. Testar acesso ao repositório verifica a leitura pública; salvar o link não conecta a conta Git.'
+        if any(word in lower for word in ('permission denied','write access','403','permission to','access denied')):
+            return 'A conta configurada no Git não tem permissão para enviar registros a este repositório. Configure uma conta com permissão de escrita. Os registros continuam salvos neste computador.'
+        if any(word in lower for word in ('could not resolve','failed to connect','unable to access','ssl certificate','timed out')):
+            return 'O Git não conseguiu conectar ao GitHub. Confira a internet, o proxy e o certificado da rede da empresa. Os registros continuam salvos neste computador.'
+        return 'Não foi possível sincronizar os registros. Confira a conexão e a conta configurada no Git. '+detail[-500:]
 
     def remote_tree(self,cache,branch):
         ref='refs/heads/'+branch
         probe=self.git(cache,'ls-remote','--exit-code','origin',ref,check=False)
         if probe.returncode==2:return None,{}
         if probe.returncode:
-            raise SyncError('Repositório indisponível. Confira a conexão e o acesso da conta configurada no Git.')
+            raise SyncError(self.connection_error(probe.stderr.decode('utf-8','replace')))
         self.git(cache,'fetch','--no-tags','origin',ref)
         tip=self.git(cache,'rev-parse','FETCH_HEAD').stdout.decode().strip()
         tree=self.git(cache,'ls-tree','-rlz',tip).stdout
@@ -138,9 +152,11 @@ class RecordSync:
             conf=self.settings()
             if not conf.get('sync_enabled',True):return self.status()
             branch=conf.get('sync_branch','registros-materiais')
+            if self.state.get('configuration')!=[conf['repository'],branch]:
+                self.state.update(configuration=[conf['repository'],branch],last_success=None,error='',pending=None,uploaded=0,downloaded=0)
             if branch==conf.get('branch','main') or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_/-]*',branch) or '..' in branch or '//' in branch or branch.endswith('/'):
                 raise SyncError('Use uma branch exclusiva de registros, diferente da branch do programa.')
-            self.state.update(running=True,error='',last_attempt=stamp(),uploaded=0,downloaded=0,pending=None)
+            self.state.update(running=True,error='',last_attempt=stamp(),uploaded=0,downloaded=0,pending=None,configuration=[conf['repository'],branch])
             self.folder.mkdir(parents=True,exist_ok=True)
             key=hashlib.sha256((conf['repository']+'|'+branch).encode()).hexdigest()[:20]
             cache=self.folder/(key+'.git')
@@ -165,7 +181,7 @@ class RecordSync:
                     self.state.update(uploaded=len(outgoing),pending=0);break
                 detail=pushed.stderr.decode('utf-8','replace')
                 if not any(code in detail for code in ('fetch first','non-fast-forward','failed to update ref','cannot lock ref')):
-                    raise SyncError('Recebimento concluído; envio pendente. Confira a permissão de escrita ou a proteção da branch. '+detail[-700:])
+                    raise SyncError('Recebimento concluído; envio pendente. '+self.connection_error(detail))
                 if attempt==3:raise SyncError('Outros computadores estão enviando registros. A próxima tentativa continuará sem sobrescrever o histórico.')
             self.state.update(last_success=stamp(),error='')
         except (SyncError,OSError,ValueError,KeyError) as exc:

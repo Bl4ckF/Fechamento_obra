@@ -1,14 +1,27 @@
-PUBLICAR VERSAO PARA ATUALIZACAO AUTOMATICA
+PUBLICAR VERSÃO PARA ATUALIZAÇÃO AUTOMÁTICA — v11.4.0
 
-1) Edite app.py: VERSION='11.3.0' (exemplo)
-2) Edite version.json: "version":"11.3.0"
-3) Envie ao GitHub os arquivos novos e a versao alterada (inclusive updates.py e update_worker.py).
-4) No GitHub, abra Releases > Draft a new release.
-5) Crie a tag v11.3.0 apontando para o commit com a versao 11.3.0.
-6) Publique a Release (Latest, nao Pre-release).
-7) Opcional: anexe um ZIP do programa, sem dados/ nem .git. Se nao anexar, o GitHub entrega o ZIP da tag automaticamente.
-8) Na instalacao anterior, abra Configuracoes > Verificar atualizacao > Instalar atualizacao.
+SEM RELEASE (repositório ainda não tem uma Release estável)
+1. Mantenha app.py (VERSION) e version.json (version) na mesma versão, por
+   exemplo 11.4.0. A versão deve ser maior que a instalada para oferecer atualização.
+2. Envie todo o conteúdo da pasta Fechamento_Obras_Engelmig à raiz do repositório,
+   incluindo repository.py, updates.py e update_worker.py. Preserve dados/ local.
+3. Confira Configurações > Repositório GitHub e Branch do programa (ex.: main).
+4. Use Verificar atualização > Instalar atualização. O programa lê version.json
+   e baixa exatamente o commit consultado, mesmo se a branch mudar depois.
 
-O app inicia um BAT EXTERNO que aguarda o servidor terminar, copia os arquivos, preserva dados/ e inicia INICIAR.bat.
-Requer Windows, acesso ao GitHub e repositorio publico.
-A primeira instalacao deste atualizador precisa ser feita substituindo os arquivos manualmente; DEPOIS disso atualiza sozinho.
+COM RELEASE (preferida quando há uma Release estável publicada)
+1. Envie os arquivos e a versão ao GitHub.
+2. Abra Releases > Draft a new release. Crie a tag v11.4.0 no commit correspondente.
+3. Publique como Latest, sem marcar Pre-release.
+4. Opcional: anexe o ZIP completo do aplicativo, sem dados/ nem .git.
+   Sem anexo, o programa usa o ZIP oficial da tag.
+
+Se já existe uma Release, publique uma nova Release para oferecer a versão nova.
+Só salvar o link não publica arquivos nem autentica a conta Git.
+O botão Testar acesso confere a leitura do repositório. O envio dos registros
+precisa de Git instalado e conta com permissão de escrita neste computador.
+
+A instalação automática requer Windows e repositório público. Um BAT externo
+aguarda o servidor terminar, preserva dados/, .git e runtime/ e reinicia INICIAR.bat.
+A primeira instalação desta correção deve ser feita substituindo os arquivos
+manualmente, com o programa fechado. O ZIP não foi publicado automaticamente.

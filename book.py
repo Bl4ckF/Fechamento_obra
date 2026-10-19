@@ -9,6 +9,7 @@ from urllib.parse import urlparse, parse_qs, urlencode
 from engine import calculate, decimal_text
 from geo import parse_coord, format_utm, coordinate_for_book
 from drawing import clean_drawing
+from repository import normalize_repository
 
 LEGACY_FORMS_URL='https://teams.microsoft.com/l/message/19:2f95e394-cfb6-41e0-9448-906a1b942f03_9a8fb881-664f-4854-b25a-f6d868824029@unq.gbl.spaces/1791913041803?context=%7B%22contextType%22%3A%22chat%22%7D'
 DEFAULT_FORMS_URL='https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=hoDG-Fy5y0mdOO03lAq-9eWyRm5PvkRKkhBxMcQVKxxUMzNRRzNHNlFFUkswRVg0TjRXUzhaOFNPUy4u&b2b=true'
@@ -45,9 +46,7 @@ def forms_url(value):
 def clean_settings(data):
     out=dict(DEFAULT_SETTINGS)
     out['forms_url']=forms_url(data.get('forms_url',out['forms_url']))
-    repository=text(data.get('repository',out['repository']),300).rstrip('/')
-    if not re.fullmatch(r'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?',repository):raise ValueError('Informe o endereço do repositório no GitHub.')
-    out['repository']=repository.removesuffix('.git')
+    out['repository']=normalize_repository(data.get('repository',out['repository']))
     branch=text(data.get('branch','main'),100)
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_./-]*',branch) or '..' in branch:raise ValueError('Nome de branch inválido.')
     out['branch']=branch

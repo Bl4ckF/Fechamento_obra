@@ -12,7 +12,7 @@ let callbacks,currentDoc,uploadResolve,uploadDelay=false,failFlush=false,pending
 const env={window:{addEventListener(){}},document:{getElementById:node,querySelector:node,querySelectorAll:()=>[],addEventListener(){}},$:node,
  S:{services:[],bases:[],labor:{},result:{services:[]}},crypto:require('node:crypto').webcrypto,
  cp:x=>JSON.parse(JSON.stringify(x)),esc:x=>String(x??''),fmt:String,dirty(){saved++;},run:fn=>(...args)=>fn(...args),confirm:()=>true,toast(){},renderServices(){},renderLabor(){},loadSuggestions:async()=>{},prepareBaseControls(){},renderEditor(){},persist(){saved++;},setTimeout:()=>1,clearTimeout(){},location:{origin:'http://local'},
- api:async(url,data)=>{if(url==='/api/media'){if(uploadDelay)await new Promise(resolve=>uploadResolve=resolve);return {ref:'f'.repeat(64)+'.png',name:data.name};}return {};},
+ api:async(url,data)=>{if(url==='/api/media-check')return {missing:[]};if(url==='/api/media'){if(uploadDelay)await new Promise(resolve=>uploadResolve=resolve);return {ref:'f'.repeat(64)+'.png',name:data.name};}return {};},
 };
 env.window.Drawing={init:opts=>callbacks=opts,load:doc=>{currentDoc=doc;},flush:async()=>{if(failFlush)throw Error('Falha de salvamento');if(pending)await pending;}};
 env.window.CroquiExport={download:async(pages,order)=>{downloaded={pages,order};}};

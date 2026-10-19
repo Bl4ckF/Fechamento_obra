@@ -108,5 +108,16 @@ class RepositorySyncTests(unittest.TestCase):
         config.update(sync_enabled=True,sync_branch='main')
         self.assertIn('branch exclusiva',self.a.sync_once()['error'])
 
+    def test_error_from_previous_repository_is_not_shown_after_link_change(self):
+        config=self.a.settings()
+        self.a.state.update(configuration=[config['repository'],config['sync_branch']],error='Falha antiga',last_success='2026-01-01')
+        self.assertEqual(self.a.status()['error'],'Falha antiga')
+        config['repository']='https://github.com/another/project'
+        self.assertEqual(self.a.status()['error'],'');self.assertIsNone(self.a.status()['last_success'])
+
+    def test_git_access_error_identifies_account_requirement(self):
+        message=RecordSync.connection_error("remote: Repository not found. fatal: repository not found")
+        self.assertIn('conta',message);self.assertIn('salvar o link não conecta',message)
+
 
 if __name__=='__main__':unittest.main()

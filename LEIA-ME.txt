@@ -1,3 +1,24 @@
+NOVIDADES DA VERSÃO 11.4.0 — CROQUI E REPOSITÓRIO
+
+- Corrigida a preservação do PDF original nas páginas sem linhas vetoriais.
+- Recuperação dos fundos e das imagens de exportação quando o original existe.
+- A falha de uma página não bloqueia a navegação ou uma nova importação.
+- Vincular arquivo original recupera uma página mantendo os textos, símbolos,
+  linhas e observações. Se o original foi perdido junto com as imagens, selecione
+  o mesmo PDF usado no projeto (ou restaure o backup completo da pasta dados).
+- O botão Testar acesso ao repositório informa a leitura pública separadamente
+  da conta Git usada para enviar os registros. O link é salvo mesmo sem internet.
+- Sem Release publicada, a atualização consulta version.json na branch escolhida.
+  Link de repositório, branch inexistente e falta de versão têm mensagens distintas.
+- As quatro etapas, fotos ao lado dos serviços e prévia do book foram mantidas.
+
+ATUALIZAR ESTA VERSÃO
+Feche a janela do servidor Python. Extraia o ZIP e substitua os arquivos na
+pasta do aplicativo, mantendo dados. Execute VERIFICAR_E_INICIAR.bat, use Ctrl+F5
+no navegador e confira v11.4.0 na lateral. Não execute de dentro do ZIP.
+Se a versão anterior não consegue gerar backup por causa do croqui, feche o
+programa e copie a pasta dados inteira antes de substituir os arquivos.
+
 NOVIDADES DA VERSÃO 11.3.0
 
 1. Dados da obra: número, data, responsável e local.
@@ -26,7 +47,7 @@ PARA ATUALIZAR
 Faça um backup, feche o programa e substitua os arquivos, preservando a pasta
 dados. Execute VERIFICAR_E_INICIAR.bat e atualize o navegador com Ctrl+F5.
 
-ENGELMIG ENERGIA — FECHAMENTO DE OBRAS v11.3.0
+ENGELMIG ENERGIA — FECHAMENTO DE OBRAS v11.4.0
 Campo Grande / MS
 
 ABRIR E ATUALIZAR
@@ -38,7 +59,7 @@ ABRIR E ATUALIZAR
    Para sincronizar a equipe: Git instalado e acesso de escrita ao repositório.
 5. VERIFICAR_INSTALACOES.bat confere Python, Git, arquivos e acesso ao repositório.
 6. A interface abre normalmente em http://127.0.0.1:8766.
-   Recarregue a aba com Ctrl+F5. Confira v11.3.0 na lateral. Apenas substituir
+   Recarregue a aba com Ctrl+F5. Confira v11.4.0 na lateral. Apenas substituir
    os arquivos sem fechar e reabrir o servidor mantém o código antigo em execução.
 
 O banco e os backups das versões 1 a 10 continuam aceitos.
@@ -469,7 +490,8 @@ ATUALIZACAO AUTOMATICA POR GITHUB RELEASES (WINDOWS)
 ----------------------------------------------------
 1. Publicar o codigo na branch main do repositorio configurado.
 2. Ajustar app.py (VERSION) e version.json (version) para a mesma nova versao.
-3. Criar uma Release publicada (nao rascunho, nao prerelease), tag vX.Y.Z.
+3. Sem Release, a branch configurada é consultada. Se já houver Release, publique
+   a nova Release (não rascunho, não prerelease), com tag vX.Y.Z.
 4. Opcional: anexar ZIP completo do programa com app.py, updates.py,
    update_worker.py, version.json, web/ etc na mesma pasta. Sem anexo,
    o atualizador usa o ZIP da tag oferecido pelo proprio GitHub.

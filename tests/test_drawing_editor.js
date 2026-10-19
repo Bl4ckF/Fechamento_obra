@@ -213,11 +213,12 @@ const type=text=>{node().focus();node().textContent=text;node().oninput();};
  // Recover missing preview assets from the saved original, without losing edits.
  missingImage=true;let recoveryCount=0;
  env.window.PDFSource={render:async()=>{recoveryCount++;return {original:new Image(),clean:new Image()};}};
- drawing.load({...recovered,pdf_source_ref:'e'.repeat(64)+'.pdf'},null,true);await drawing.flush();
+ drawing.load({...recovered,background_ref:'e'.repeat(64)+'.png',pdf_source_ref:'e'.repeat(64)+'.pdf'},null,true);await drawing.flush();
  assert.equal(recoveryCount,1);assert.equal(recoveredAssets,1);assert.equal(images.at(-1).doc.background_ref,'d'.repeat(64)+'.png');assert.equal(images.at(-1).doc.objects[0].text,'EDIÇÃO RECUPERADA');
  // Failure can be retried on the same document after media is restored.
  missingImage=true;const absent={...recovered,pdf_source_ref:null,background_ref:'c'.repeat(64)+'.png'};
  drawing.load(absent,null,true);await assert.rejects(()=>drawing.flush(),/dados\/media/);
+ await drawing.flush({allowMissing:true});assert.equal(changed.objects[0].text,'EDIÇÃO RECUPERADA','Unavailable media must not block navigation or erase edits');
  missingImage=false;drawing.load(absent,null,true);await drawing.flush();
  assert.equal(images.at(-1).doc.objects[0].text,'EDIÇÃO RECUPERADA');
  console.log('OK: editor integrado; página de 3.000 textos e 5.000 traços; cache, zoom agrupado, autosave sem PNG obsoleto, exportação 6000 × 4000 e recursos anteriores.');

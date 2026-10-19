@@ -129,6 +129,29 @@ class StorageTests(unittest.TestCase):
         self.assertIn('instalado'.upper(),text)
 
 class HTTPTests(unittest.TestCase):
+    def test_repository_link_saves_without_network_and_check_is_read_only(self):
+        from unittest.mock import patch
+        previous=app.settings()
+        def post(path,payload):
+            req=Request(self.base+path,data=json.dumps(payload).encode(),headers={'X-App-Token':app.TOKEN},method='POST')
+            with urlopen(req) as response:return json.load(response)
+        try:
+            with patch('app.SYNC',None),patch('updates.github_json',side_effect=AssertionError('Saving a URL must not require internet')):
+                saved=post('/api/settings',dict(previous,repository='github.com/Bl4ckF/fechamento_obra/tree/main',sync_enabled=False))
+            self.assertEqual(saved['repository'],'https://github.com/Bl4ckF/fechamento_obra')
+            with patch('updates.github_json',return_value={'default_branch':'main'}):
+                result=post('/api/repository-check',dict(saved,repository='https://github.com/another/project'))
+            self.assertTrue(result['found']);self.assertEqual(app.settings()['repository'],saved['repository'])
+        finally:app.save_record('settings',dict(previous,id='config'))
+
+    def test_media_availability_does_not_create_files(self):
+        missing='e'*64+'.png'
+        req=Request(self.base+'/api/media-check',data=json.dumps({'refs':[missing]}).encode(),headers={'X-App-Token':app.TOKEN},method='POST')
+        with urlopen(req) as response:self.assertEqual(json.load(response),{'missing':[missing]})
+        self.assertFalse((app.DATA_DIR/'media'/missing).exists())
+        req=Request(self.base+'/api/media-check',data=b'{"refs":["../secret"]}',headers={'X-App-Token':app.TOKEN},method='POST')
+        with self.assertRaises(HTTPError) as denied:urlopen(req)
+        self.assertEqual(denied.exception.code,400)
     @classmethod
     def setUpClass(cls):
         cls.server=app.ThreadingHTTPServer(('127.0.0.1',0),app.Handler)

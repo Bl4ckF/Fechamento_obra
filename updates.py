@@ -4,6 +4,7 @@ Fluxo: consultar Release -> baixar e validar ZIP -> iniciar BAT externo ->
 encerrar servidor -> aplicar com rollback -> reiniciar INICIAR.bat.
 """
 import json
+import base64
 import os
 from pathlib import Path
 import re
@@ -17,6 +18,7 @@ from urllib.parse import quote, urlparse
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 import zipfile
+from repository import repository_name
 
 _notices = {}
 _notice_lock = threading.Lock()
@@ -30,18 +32,76 @@ def version_tuple(value):
 
 
 def repo_name(settings):
-    value = str(settings.get('repository', '')).strip().rstrip('/').removesuffix('.git')
-    match = re.fullmatch(r'https://github\.com/([\w.-]+)/([\w.-]+)', value, re.I)
-    if not match:
-        raise ValueError('Informe um repositório GitHub HTTPS válido nas configurações.')
-    return f'{match.group(1)}/{match.group(2)}'
+    return repository_name(settings.get('repository', ''))
+
+
+def github_json(url):
+    with urlopen(Request(url, headers={'User-Agent': 'Engelmig-Atualizador', 'Accept': 'application/vnd.github+json'}), timeout=20) as response:
+        raw=response.read(1024 * 1024 + 1)
+        if len(raw)>1024 * 1024:raise ValueError('A resposta do GitHub excedeu o limite de leitura. Tente novamente mais tarde.')
+        return json.loads(raw.decode('utf-8'))
+
+
+def repository_status(settings):
+    """Consulta a existência do repositório, sem depender de Releases ou Git."""
+    repo = repo_name(settings)
+    try:
+        payload = github_json(API_REPO + repo)
+        return {'found': True, 'repository': 'https://github.com/' + repo,
+                'default_branch': payload.get('default_branch', 'main'),
+                'message': 'Repositório encontrado. O endereço foi reconhecido pelo GitHub.'}
+    except HTTPError as exc:
+        if exc.code == 404:
+            return {'found': False, 'repository': 'https://github.com/' + repo,
+                    'message': 'O repositório não está acessível sem autenticação. Confira o dono, o nome e se ele é privado.'}
+        if exc.code in (403, 429):
+            return {'found': None, 'message': 'O GitHub limitou ou recusou a consulta. Tente novamente mais tarde.'}
+        return {'found': None, 'message': 'Não foi possível conferir o repositório agora (HTTP '+str(exc.code)+').'}
+    except (OSError, ValueError):
+        return {'found': None, 'message': 'Não foi possível conectar ao GitHub. O endereço continua salvo; confira a conexão.'}
+
+
+def branch_version(settings):
+    """Sem Release, usa version.json e um ZIP de commit imutável da branch."""
+    repo = repo_name(settings)
+    status = repository_status(settings)
+    if status['found'] is not True:
+        raise ValueError(status['message'])
+    branch = str(settings.get('branch') or status['default_branch']).strip()
+    try:
+        commit = github_json(API_REPO + repo + '/branches/' + quote(branch, safe=''))
+    except HTTPError as exc:
+        if exc.code == 404:
+            raise ValueError('Repositório encontrado, mas a branch "'+branch+'" não existe. Confira a Branch do programa nas configurações.') from None
+        if exc.code == 409:
+            raise ValueError('Repositório encontrado, mas ele ainda está vazio. Envie os arquivos do programa antes de atualizar.') from None
+        raise
+    sha = str(commit.get('commit', {}).get('sha', ''))
+    if not re.fullmatch(r'[a-f0-9]{40,64}', sha):
+        raise ValueError('O GitHub não informou um commit válido para a branch do programa.')
+    try:
+        source = github_json(API_REPO + repo + '/contents/version.json?ref=' + sha)
+    except HTTPError as exc:
+        if exc.code == 404:
+            raise ValueError('Repositório encontrado, mas falta version.json na pasta principal da branch "'+branch+'". Envie os arquivos do programa para essa pasta.') from None
+        raise
+    try:
+        metadata = json.loads(base64.b64decode(source['content']).decode('utf-8-sig'))
+    except (KeyError, TypeError, ValueError):
+        raise ValueError('O arquivo version.json do repositório está inválido.') from None
+    version = str(metadata.get('version', ''))
+    if version_tuple(version) == (0, 0, 0):
+        raise ValueError('Informe uma versão X.Y.Z válida no version.json do repositório.')
+    return {'remote_version': version.lstrip('v'), 'download_url': API_REPO + repo + '/zipball/' + sha,
+            'tag': sha, 'commit': sha, 'branch': branch, 'mode': 'branch', 'repository_found': True,
+            'release_url': 'https://github.com/'+repo+'/tree/'+sha, 'asset_name': '',
+            'info': 'Repositório encontrado. Sem Release publicada; a versão foi consultada na branch "'+branch+'".'}
 
 
 def latest_release(settings):
     repo = repo_name(settings)
     url = API_REPO + repo + '/releases/latest'
-    with urlopen(Request(url, headers={'User-Agent': 'Engelmig-Atualizador', 'Accept': 'application/vnd.github+json'}), timeout=20) as r:
-        payload = json.loads(r.read(512 * 1024).decode('utf-8'))
+    payload = github_json(url)
     tag = str(payload.get('tag_name', '')).strip()
     if version_tuple(tag) == (0, 0, 0):
         raise ValueError('A última Release não possui tag de versão válida (ex.: v11.0.1).')
@@ -56,27 +116,31 @@ def latest_release(settings):
 
 
 def notice(root, settings, current, force=False):
-    key = (str(root), str(settings.get('repository')), str(current))
+    key = (str(root), str(settings.get('repository')), str(settings.get('branch')), str(current))
     with _notice_lock:
         cached = _notices.get(key)
         if cached and not force and time.monotonic() - cached[0] < 900:
             return dict(cached[1])
     result = {'available': False, 'can_update': False, 'current_version': current, 'checked_at': time.time(), 'mode': 'release'}
     try:
-        latest = latest_release(settings)
+        try:
+            latest = latest_release(settings)
+        except HTTPError as exc:
+            if exc.code != 404:raise
+            latest = branch_version(settings)
         available = version_tuple(latest['remote_version']) > version_tuple(current)
         result.update(latest, available=available, can_update=available, key=latest['tag'])
     except HTTPError as exc:
         if exc.code == 404:
-            result.update(error='O GitHub não encontrou uma Release pública publicada.',
-                detail='Confira o endereço do repositório e publique uma Release estável com tag vX.Y.Z. Uma tag ou commit isolado não basta. Repositórios privados exigem autenticação, que este atualizador ainda não oferece.')
+            result.update(error='Não foi possível acessar o arquivo de atualização no GitHub.',
+                detail='Confira o endereço, a branch e o acesso ao repositório. Repositórios privados exigem autenticação.')
         elif exc.code in (403, 429):
             result.update(error='O GitHub limitou ou recusou a consulta de atualização.',
                 detail='Aguarde e tente novamente. Se persistir, confira o acesso ao repositório e a conexão da empresa.')
         else:
             result.update(error='Não foi possível consultar a Release no GitHub.',detail=f'HTTP {exc.code}. Tente novamente mais tarde.')
     except Exception as exc:
-        result.update(error='Não foi possível consultar a última Release publicada no GitHub.', detail=str(exc)[:400])
+        result.update(error='Não foi possível consultar a atualização.', detail=str(exc)[:400])
     with _notice_lock:
         _notices[key] = (time.monotonic(), result)
     return dict(result)
@@ -89,7 +153,9 @@ def check(root, settings, current=None):
 
 
 def download_release(url, destination):
-    req = Request(url, headers={'User-Agent': 'Engelmig-Atualizador', 'Accept': 'application/octet-stream'})
+    target=urlparse(url)
+    accept='application/vnd.github+json' if target.hostname=='api.github.com' and '/zipball/' in target.path else 'application/octet-stream'
+    req = Request(url, headers={'User-Agent': 'Engelmig-Atualizador', 'Accept': accept})
     received = 0
     with urlopen(req, timeout=50) as response, open(destination, 'wb') as out:
         final = response.geturl()
