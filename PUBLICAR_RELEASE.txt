@@ -1,20 +1,20 @@
-PUBLICAR VERSÃO PARA ATUALIZAÇÃO AUTOMÁTICA — v1.3.1
+PUBLICAR VERSÃO PARA ATUALIZAÇÃO AUTOMÁTICA — v1.3.2
 
 SEM RELEASE (tag de versão do programa)
 1. Mantenha app.py (VERSION) e version.json (version) na mesma versão, por
-   exemplo 1.3.1. A versão deve ser maior que a instalada para oferecer atualização.
+   exemplo 1.3.2. A versão deve ser maior que a instalada para oferecer atualização.
 2. Envie todo o conteúdo da pasta Fechamento_Obras_Engelmig à raiz do repositório,
    incluindo repository.py, updates.py e update_worker.py. Preserve dados/ local.
 3. Confira Configurações > Repositório GitHub e Branch do programa (ex.: main).
-4. Depois de enviar o commit, crie e envie uma nova tag v1.3.1 apontando para ele.
-   Exemplo: git tag -a v1.3.1 -m "Fechamento de Obras v1.3.1"
-   Depois: git push origin v1.3.1
+4. Depois de enviar o commit, crie e envie uma nova tag v1.3.2 apontando para ele.
+   Exemplo: git tag -a v1.3.2 -m "Fechamento de Obras v1.3.2"
+   Depois: git push origin v1.3.2
 5. Use Verificar atualização > Instalar atualização. Sem Release, o programa
    consulta a última tag e baixa seu commit. Sem tags, consulta a branch.
 
 COM RELEASE (preferida quando há uma Release estável publicada)
 1. Envie os arquivos e a versão ao GitHub.
-2. Abra Releases > Draft a new release. Crie a tag v1.3.1 no commit correspondente.
+2. Abra Releases > Draft a new release. Crie a tag v1.3.2 no commit correspondente.
 3. Publique como Latest, sem marcar Pre-release.
 4. Opcional: anexe o ZIP completo do aplicativo, sem dados/ nem .git.
    Sem anexo, o programa usa o ZIP oficial da tag.
