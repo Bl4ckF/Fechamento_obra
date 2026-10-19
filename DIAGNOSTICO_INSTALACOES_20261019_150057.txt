@@ -1,0 +1,39 @@
+﻿ENGELMIG - VERIFICACAO DE INSTALACOES
+Data: 19/10/2026 15:00:53
+Pasta: C:\Users\matheus.araujo\OneDrive - ENGELMIG ENERGIA LTDA\Área de Trabalho\Fechamento_obra\
+O diagnostico faz consultas e cria este relatorio. Nao instala nem publica arquivos.
+
+[OK] Windows PowerShell 5.1.26100.9278
+1. PYTHON E BIBLIOTECAS DO PROGRAMA
+[OK] Python 3.14.8 - 64 bits
+[INFO] Interpretador: C:\Users\matheus.araujo\AppData\Local\Python\pythoncore-3.14-64\python.exe
+[OK] Bibliotecas obrigatorias, banco SQLite 3.50.4 e suporte SSL disponiveis.
+[INFO] Este programa nao precisa de pip, Node.js nem pacotes Python adicionais.
+[OK] Configuracoes existentes consultadas em modo de leitura.
+
+2. GIT E ACESSO AO REPOSITORIO
+[OK] git version 2.55.0.windows.5
+[OK] Git Credential Manager disponivel para gerenciar o login.
+[INFO] Repositorio verificado: https://github.com/Bl4ckF/fechamento_obra
+[INFO] Branch dos registros: registros-materiais
+[OK] O Git conseguiu acessar o repositorio para leitura.
+[INFO] Leitura de um repositorio publico nao confirma login nem permissao de escrita.
+
+3. AUTENTICACAO GITHUB - VERIFICACAO OPCIONAL
+[AVISO] O GitHub CLI nao confirmou uma autenticacao valida. Isso nao invalida um login separado pelo Git Credential Manager.
+[COMO CORRIGIR] Se for usar o CLI, execute: gh auth login
+[COMO CORRIGIR] Depois execute: gh auth setup-git
+[INFO] A confirmacao final do envio e feita no programa: Configuracoes > Sincronizar agora.
+[INFO] Nenhum commit ou push foi executado por este verificador.
+
+4. ARQUIVOS DO PROGRAMA
+[OK] Arquivos principais do programa, do mapa e da leitura de PDF encontrados.
+
+5. GRAVACAO E PORTAS LOCAIS
+[OK] Permissao de gravacao na pasta de dados confirmada.
+[OK] Porta local disponivel para iniciar o servidor: 8766
+
+RESULTADO
+Falhas para abrir o programa: 0 | Avisos: 1
+[OK] Requisitos basicos verificados. Abra INICIAR.bat e confira a sincronizacao em Configuracoes.
+[INFO] Mantenha a pasta dados ao atualizar. Nao precisa executar este BAT como administrador.

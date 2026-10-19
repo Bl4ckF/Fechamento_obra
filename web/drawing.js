@@ -341,11 +341,24 @@
  }
  function updateBackground(){
   const edited=new Set(model.doc.objects.map(o=>o.pdf_line_id).filter(Boolean)),excluded=(model.doc.pdf_lines||[]).filter(source=>edited.has(source.id)).map(source=>source.operator_index);
-  const key=[model.doc.background_ref||'',model.doc.pdf_text_background_ref||'',model.doc.pdf_source_ref||'',excluded.join(',')].join('|');if(backgroundRef===key)return;
+  const doc=model.doc,key=[doc.background_ref||'',doc.pdf_text_background_ref||'',doc.pdf_source_ref||'',excluded.join(',')].join('|');if(backgroundRef===key&&!backgroundError)return;
   if(backgroundRef?.split('|')[0]!==key.split('|')[0]){background=null;textBackground=null;}backgroundRef=key;backgroundError=null;
-  const read=ref=>ref?new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(Error('Não foi possível abrir a página do croqui. Reabra a obra ou importe o PDF novamente.'));image.src='/media/'+encodeURIComponent(ref);}):Promise.resolve(null);
-  const request=excluded.length?window.PDFSource.render(model.doc.pdf_source_ref,model.doc.background_source,excluded,sourceList().length>0,true).then(p=>[p.original,p.clean]):Promise.all([read(model.doc.background_ref),read(model.doc.pdf_text_background_ref)]);
-  backgroundPromise=request.then(([image,clean])=>{if(backgroundRef===key){background=image;textBackground=clean;draw();resize();}}).catch(error=>{if(backgroundRef===key){backgroundError=error;el('drawingStatus').textContent=error.message;}});
+  const read=ref=>ref?new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(Error('Não foi possível carregar a imagem do croqui. Preserve ou restaure a pasta dados/media da obra. As edições continuam guardadas.'));image.src='/media/'+encodeURIComponent(ref);}):Promise.resolve(null);
+  const fromPDF=preview=>window.PDFSource.render(doc.pdf_source_ref,doc.background_source,excluded,(doc.pdf_texts||[]).length>0,preview).then(p=>[p.original,p.clean]);
+  const request=excluded.length?fromPDF(true):Promise.all([read(doc.background_ref),read(doc.pdf_text_background_ref)]).catch(error=>{
+   if(!doc.pdf_source_ref||!window.PDFSource)throw error;
+   // Reconstrói a imagem ausente a partir do PDF preservado, sem apagar edições.
+   return fromPDF(false).then(pictures=>[...pictures,true]).catch(()=>{throw Error('A imagem e o PDF original do croqui não puderam ser abertos. Restaure a pasta dados/media ou o backup da obra. As edições continuam guardadas.');});
+  });
+  backgroundPromise=request.then(async([image,clean,recovered])=>{if(backgroundRef!==key)return;
+   background=image;textBackground=clean;
+   if(recovered&&callbacks?.onRecover){
+    const refs=await callbacks.onRecover(image,clean);
+    if(backgroundRef!==key||model.doc!==doc)return;
+    model.commit({...doc,background_ref:refs.original,pdf_text_background_ref:refs.clean});changed();
+   }
+   draw();resize();
+  }).catch(error=>{if(backgroundRef===key){backgroundError=error;el('drawingStatus').textContent=error.message;}});
  }
  function changed(){dirty=true;revision++;activity();loadedKey='';loadedDoc={...model.doc,objects:clone(model.doc.objects)};updateBackground();callbacks?.onChange(loadedDoc);refreshSearch();draw();el('drawingStatus').textContent='Salvando alterações do croqui…';scheduleImage();}
  function scheduleImage(){clearTimeout(timer);timer=setTimeout(autoFlush,IMAGE_IDLE_MS);}
@@ -367,8 +380,8 @@
   })().finally(()=>{inFlight=null;});await inFlight;if(dirty){if(automatic)scheduleImage();else return flush();}
  }
  function load(doc,fallbackRef,needsImage=false){
-  if(doc&&doc===loadedDoc){if(needsImage&&!dirty){dirty=true;lastRendered='';scheduleImage();}return;}
-  const incoming=doc||{...blank(),background_ref:fallbackRef||null},key=JSON.stringify(incoming);if(key===loadedKey){loadedDoc=doc;if(needsImage&&!dirty){dirty=true;lastRendered='';scheduleImage();}return;}
+  if(doc&&doc===loadedDoc&&!backgroundError){if(needsImage&&!dirty){dirty=true;lastRendered='';scheduleImage();}return;}
+  const incoming=doc||{...blank(),background_ref:fallbackRef||null},key=JSON.stringify(incoming);if(key===loadedKey&&!backgroundError){loadedDoc=doc;if(needsImage&&!dirty){dirty=true;lastRendered='';scheduleImage();}return;}
   endPan();clearTimeout(navigationTimer);navigating=false;revision++;active=selected=armed='';symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;lineStart=null;loadedKey=key;loadedDoc=doc;model=new DrawingModel(incoming);dirty=needsImage;lastRendered=needsImage?'':key;clearTimeout(timer);if(needsImage)scheduleImage();
   for(const node of textNodes.values())node.remove();textNodes.clear();for(const node of symbolNodes.values())node.remove();symbolNodes.clear();for(const node of lineNodes.values())node.remove();lineNodes.clear();updateBackground();refreshSearch();draw();if(ctx){syncControls();updateModes();zoom=1;resize();syncZoom();el('pdfEditorViewport').scrollLeft=el('pdfEditorViewport').scrollTop=0;}
  }

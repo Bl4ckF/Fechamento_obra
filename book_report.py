@@ -67,7 +67,7 @@ def photo_parts(blocks,budget=21):
     if part:parts.append(part)
     return parts or [[]]
 
-def book_html(job):
+def book_html(job,preview=False):
     book=job.get('book') or {};points=book.get('points',[]);pages=[]
     services=job['result'].get('services',[])
     def labor(point_id,operation):return [s for s in services if s.get('point_id')==point_id and s.get('operation')==operation]
@@ -130,16 +130,16 @@ def book_html(job):
     if job.get('notes') or any(len(str(job.get(key,'')))>limit for key,limit in [('work_order',40),('date',20),('responsible',60),('location',100)]):
         for part in wrap_text(details,1800):add('<h2>Informações completas da obra</h2><p class="pre">'+e(part)+'</p>','OBSERVAÇÕES DA OBRA')
     pending=list(job['result'].get('pending',[]))+list(book.get('pending',[]))
-    return document_html(job,pages,'Book da obra',pending)
+    return document_html(job,pages,'Book da obra',pending,preview=preview)
 
 
-def document_html(job,pages,title,pending):
+def document_html(job,pages,title,pending,preview=False):
     html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+e(title)+' '+e(job['work_order'])+'</title><link rel="stylesheet" href="/book-print.css"></head><body>'
     html+='<nav class="print-toolbar"><strong>'+e(title)+' '+e(job['work_order'])+'</strong><button id="printBook">Imprimir / salvar PDF</button><span>'+str(len(pages))+' páginas</span></nav>'
     if pending:html+='<div class="print-alert">RASCUNHO — '+e(' '.join(pending))+'</div>'
     for index,(body,klass) in enumerate(pages):
         html+=f'<article class="book-page {klass}">{body}<footer><img src="/assets/rodape.png" alt="Energisa Mato Grosso do Sul"><span>'+('RASCUNHO · ' if pending else '')+f'Obra {e(short(job["work_order"],40))} · {index+1}/{len(pages)}</span></footer></article>'
-    return (html+'<script src="/book-print.js"></script></body></html>').encode('utf-8')
+    return (html+('' if preview else '<script src="/book-print.js"></script>')+'</body></html>').encode('utf-8')
 
 
 def labor_totals(services):

@@ -1,4 +1,32 @@
-ENGELMIG ENERGIA — FECHAMENTO DE OBRAS v11.2.0
+NOVIDADES DA VERSÃO 11.3.0
+
+1. Dados da obra: número, data, responsável e local.
+2. Pontos e serviços: foto de referência ao lado da mão de obra e dos materiais.
+   Verde identifica instalado; laranja identifica desativado/retirado.
+   As composições em andamento são guardadas ao trocar de ponto.
+3. Croqui e condutores: projeto e somagem dos cabos.
+4. Revisão e envio: totais, book/PDF, documento separado de mão de obra e
+   materiais e confirmação do Forms.
+
+A prévia do book acompanha automaticamente os dados e os serviços adicionados.
+Use Abrir em janela para acompanhá-la em outra janela ou tela. Em telas largas,
+Fixar ao lado mantém a prévia à direita. Atualizar prévia não cria registros no
+histórico e não gera amostras extras de materiais.
+
+O salvamento automático permanece ativo em todas as etapas. Os materiais
+continuam no documento separado; preços aparecem somente na soma de mão de obra.
+O croqui continua primeiro no book.
+
+O PDF original é guardado em novas importações, inclusive páginas só de texto.
+Se a imagem de uma página falhar e o original estiver disponível, o programa
+reconstrói o fundo e mantém as edições. Se os arquivos da pasta dados/media
+estiverem ausentes, restaure a pasta ou um backup completo da obra.
+
+PARA ATUALIZAR
+Faça um backup, feche o programa e substitua os arquivos, preservando a pasta
+dados. Execute VERIFICAR_E_INICIAR.bat e atualize o navegador com Ctrl+F5.
+
+ENGELMIG ENERGIA — FECHAMENTO DE OBRAS v11.3.0
 Campo Grande / MS
 
 ABRIR E ATUALIZAR
@@ -10,7 +38,7 @@ ABRIR E ATUALIZAR
    Para sincronizar a equipe: Git instalado e acesso de escrita ao repositório.
 5. VERIFICAR_INSTALACOES.bat confere Python, Git, arquivos e acesso ao repositório.
 6. A interface abre normalmente em http://127.0.0.1:8766.
-   Recarregue a aba com Ctrl+F5. Confira v11.2.0 na lateral. Apenas substituir
+   Recarregue a aba com Ctrl+F5. Confira v11.3.0 na lateral. Apenas substituir
    os arquivos sem fechar e reabrir o servidor mantém o código antigo em execução.
 
 O banco e os backups das versões 1 a 10 continuam aceitos.

@@ -29,7 +29,7 @@ import learning
 from records_sync import RecordSync
 
 APP_ID='engelmig-fechamento-v1'
-VERSION='11.2.0'
+VERSION='11.3.0'
 LEARNING_LOCK=threading.RLock()
 TOKEN=secrets.token_urlsafe(32)
 DATA_DIR=Path(os.environ.get('ENGELMIG_DATA_DIR',ROOT/'dados'))
@@ -232,6 +232,16 @@ def report_csv(job):
         for text in job['result']['pending']: row([text])
     return ('\ufeff'+out.getvalue()).encode('utf-8')
 
+def preview_book(payload):
+    """Render the current draft without saving jobs, samples, or media."""
+    result=calculate(payload.get('services',[]))
+    book=normalize_book(payload.get('book') or {},result['services'],available_media())
+    job={'result':result,'book':book,'status':'rascunho'}
+    for key,limit in [('work_order',120),('date',30),('responsible',160),('location',500),('notes',4000)]:
+        job[key]=str(payload.get(key,'') or '')[:limit]
+    pending=list(result.get('pending',[]))+list(book.get('pending',[]))
+    return {'html':book_html(job,preview=True).decode('utf-8'),'pending':pending}
+
 def save_job(payload):
     result=calculate(payload.get('services',[]))
     if not result['services']: raise ValueError('Adicione ao menos um serviço.')
@@ -416,6 +426,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/media':return self.send(put_media(data,DATA_DIR/'media'))
             if self.path=='/api/project-pdf':return self.send(put_pdf(data,DATA_DIR/'media'))
             if self.path=='/api/book-check':return self.send(normalize_book(data.get('book'),calculate(data.get('services',[]))['services'],available_media()))
+            if self.path=='/api/book-preview':return self.send(preview_book(data))
             if self.path=='/api/draft-clear':return self.send(clear_draft(data))
             if self.path=='/api/draft':
                 return self.send(automatic_draft(data))

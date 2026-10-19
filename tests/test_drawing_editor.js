@@ -21,14 +21,16 @@ class Element{
  toDataURL(){return 'data:image/png;base64,'+Buffer.from(JSON.stringify({texts:this.context.texts,width:this.width,height:this.height})).toString('base64');}
 }
 const panel=new Element(),document={getElementById:id=>elements.get(id),querySelector:selector=>selector==='dialog[open]'?(elements.get('symbolEditorDialog')?.open?elements.get('symbolEditorDialog'):null):panel,body:new Element(),addEventListener(name,fn){(this.events??={})[name]=fn;},get activeElement(){return focused;},createElement:tag=>new Element(tag),createElementNS:(ns,tag)=>new Element(tag)};
-class Image{constructor(){this.width=6000;this.height=4000;}set src(value){Promise.resolve().then(()=>this.onload());}}
+let missingImage=false;
+class Image{constructor(){this.width=6000;this.height=4000;}set src(value){Promise.resolve().then(()=>missingImage?this.onerror():this.onload());}}
 const env={window:{},document,Image,crypto:require('node:crypto').webcrypto,setTimeout:()=>1,clearTimeout(){},console};vm.createContext(env);
 const personal=new Map();let failSymbols=false;env.api=async(path,payload)=>{if(path!=='/api/custom-symbols')throw Error(path);if(failSymbols)throw Error('Falha simulada ao gravar');if(!payload)return [...personal.values()];const old=personal.get(payload.symbol.id);assert.equal(payload.expected_revision,old?.revision||0);const saved={...JSON.parse(JSON.stringify(payload.symbol)),revision:(old?.revision||0)+1};personal.set(saved.id,saved);return saved;};
 for(const f of ['croqui-quality.js','pdf-text.js','pdf-lines.js','network-symbols.js','drawing-ui.js','symbol-editor.js','pdf-search.js','drawing-transform.js','croqui-render.js','drawing.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../web',f),'utf8'),env);
 env.window.NetworkSymbols.setCatalog(JSON.parse(fs.readFileSync(path.join(__dirname,'../data/simbolos_rede.json'),'utf8')));
+let recoveredAssets=0;
 let changed,images=[],searchDocuments=null,searchPageIndex=0,failNavigation=false;
 const drawing=env.window.Drawing;
-drawing.init({getPages:()=>searchDocuments,getPageId:()=>searchDocuments?.[searchPageIndex]?.id,onSearchPage:async id=>{if(failNavigation)throw Error('Falha ao salvar página');await drawing.flush();searchPageIndex=searchDocuments.findIndex(p=>p.id===id);drawing.load(searchDocuments[searchPageIndex].drawing);},onChange:doc=>{changed=doc;if(searchDocuments)searchDocuments[searchPageIndex].drawing=doc;},onImage:async(data,signature)=>{images.push({...JSON.parse(Buffer.from(data.split(',')[1],'base64')),doc:JSON.parse(signature)});}});
+drawing.init({onRecover:async()=>{recoveredAssets++;missingImage=false;return {original:'d'.repeat(64)+'.png',clean:'b'.repeat(64)+'.png'};},getPages:()=>searchDocuments,getPageId:()=>searchDocuments?.[searchPageIndex]?.id,onSearchPage:async id=>{if(failNavigation)throw Error('Falha ao salvar página');await drawing.flush();searchPageIndex=searchDocuments.findIndex(p=>p.id===id);drawing.load(searchDocuments[searchPageIndex].drawing);},onChange:doc=>{changed=doc;if(searchDocuments)searchDocuments[searchPageIndex].drawing=doc;},onImage:async(data,signature)=>{images.push({...JSON.parse(Buffer.from(data.split(',')[1],'base64')),doc:JSON.parse(signature)});}});
 const source={id:'pdf_0',text:'PONTO ANTIGO',x1:40,y1:70,size:20,rotation:0,font:'Arial',color:'#111111',box:{x:38,y:48,w:180,h:26},text_width:175};
 const node=()=>elements.get('pdfTextLayer').children[0];
 const type=text=>{node().focus();node().textContent=text;node().oninput();};
@@ -208,5 +210,15 @@ const type=text=>{node().focus();node().textContent=text;node().oninput();};
  type('EDIÇÃO RECUPERADA');const recovered=JSON.parse(JSON.stringify(changed)),imagesBeforeRestore=images.length;
  drawing.load(null);drawing.load(recovered,recovered.background_ref,true);await drawing.flush();
  assert.equal(images.length,imagesBeforeRestore+1);assert.equal(images.at(-1).doc.objects[0].text,'EDIÇÃO RECUPERADA','An edit saved before PNG generation is rebuilt after reopening');
+ // Recover missing preview assets from the saved original, without losing edits.
+ missingImage=true;let recoveryCount=0;
+ env.window.PDFSource={render:async()=>{recoveryCount++;return {original:new Image(),clean:new Image()};}};
+ drawing.load({...recovered,pdf_source_ref:'e'.repeat(64)+'.pdf'},null,true);await drawing.flush();
+ assert.equal(recoveryCount,1);assert.equal(recoveredAssets,1);assert.equal(images.at(-1).doc.background_ref,'d'.repeat(64)+'.png');assert.equal(images.at(-1).doc.objects[0].text,'EDIÇÃO RECUPERADA');
+ // Failure can be retried on the same document after media is restored.
+ missingImage=true;const absent={...recovered,pdf_source_ref:null,background_ref:'c'.repeat(64)+'.png'};
+ drawing.load(absent,null,true);await assert.rejects(()=>drawing.flush(),/dados\/media/);
+ missingImage=false;drawing.load(absent,null,true);await drawing.flush();
+ assert.equal(images.at(-1).doc.objects[0].text,'EDIÇÃO RECUPERADA');
  console.log('OK: editor integrado; página de 3.000 textos e 5.000 traços; cache, zoom agrupado, autosave sem PNG obsoleto, exportação 6000 × 4000 e recursos anteriores.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

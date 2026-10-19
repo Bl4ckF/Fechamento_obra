@@ -275,6 +275,33 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(backup['schema'],4)
         self.assertTrue(backup['memories'])
         self.assertTrue(backup['memory_history'])
+    def test_live_book_preview_is_read_only_and_handles_incomplete_draft(self):
+        def post(value,token=app.TOKEN):
+            request=Request(self.base+'/api/book-preview',data=json.dumps(value).encode(),headers={'X-App-Token':token},method='POST')
+            with urlopen(request) as response:return json.load(response)
+        before={table:app.records(table) for table in ('jobs','drafts','work_drafts')}
+        with app.connect() as db:learning_before=app.learning.export_records(db)
+        empty=post({'services':[],'book':{}})
+        self.assertIn('Croqui não informado',empty['html'])
+        self.assertIn('Nenhum ponto cadastrado',empty['html'])
+        self.assertTrue(empty['pending'])
+        self.assertNotIn('<script',empty['html'])
+        raw={'work_order':'<img src=x onerror=alert(1)>','responsible':'Ana','book':{'points':[{'id':'p1','number':'1','installed':'Instalação confirmada','photos':[]}],'no_conductors':True},'services':[dict(service(),point_id='p1')]}
+        preview=post(raw)
+        self.assertIn('Instalação confirmada',preview['html'])
+        self.assertIn('&lt;img src=x onerror=alert(1)&gt;',preview['html'])
+        self.assertLess(preview['html'].index('CROQUI DA OBRA'),preview['html'].index('PONTO 1'))
+        self.assertNotIn('Unitário (R$)',preview['html'])
+        self.assertNotIn('MATERIAIS INSTALADOS',preview['html'])
+        raw['book']['points'][0]['installed']='Mudança na observação'
+        self.assertIn('Mudança na observação',' '.join(post(raw)['html'].split()))
+        self.assertEqual(before,{table:app.records(table) for table in before})
+        with app.connect() as db:learning_after=app.learning.export_records(db)
+        self.assertEqual(learning_before['events'],learning_after['events'])
+        self.assertEqual(learning_before['sources'],learning_after['sources'])
+        with self.assertRaises(HTTPError) as error:post({},token='wrong')
+        self.assertEqual(error.exception.code,403)
+
     def test_roundtrip_and_local_request_protection(self):
         with urlopen(self.base+'/api/bootstrap') as r: bootstrap=json.load(r)
         self.assertEqual(len(bootstrap['catalog']['materials']),2652)

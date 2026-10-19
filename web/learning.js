@@ -58,7 +58,7 @@
  async function usePattern(pattern){
   const entry=crypto.randomUUID(),point_id=window.Book?.activeId()||'';
   await selectLabor(pattern.editor.labor_id,{...cp(pattern.editor),entry_id:entry,point_id,quantity:'1',reviewed:false},-1,true);
-  S.patternSource=`Padrão observado em ${pattern.support} de ${pattern.uses} registros`;S.editorTouched=false;showTab('work');renderEditor();persist();
+  S.patternSource=`Padrão observado em ${pattern.support} de ${pattern.uses} registros`;S.editorTouched=false;showTab('book');renderEditor();persist();
  }
  function displayNotice(data){
   const banner=$('updateNotice');

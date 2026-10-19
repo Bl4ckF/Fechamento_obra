@@ -11,7 +11,7 @@ const node=id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(i
 let callbacks,currentDoc,uploadResolve,uploadDelay=false,failFlush=false,pending=null,saved=0,downloaded=null;
 const env={window:{addEventListener(){}},document:{getElementById:node,querySelector:node,querySelectorAll:()=>[],addEventListener(){}},$:node,
  S:{services:[],bases:[],labor:{},result:{services:[]}},crypto:require('node:crypto').webcrypto,
- cp:x=>JSON.parse(JSON.stringify(x)),esc:x=>String(x??''),fmt:String,dirty(){saved++;},run:fn=>(...args)=>fn(...args),confirm:()=>true,toast(){},renderServices(){},setTimeout:()=>1,clearTimeout(){},location:{origin:'http://local'},
+ cp:x=>JSON.parse(JSON.stringify(x)),esc:x=>String(x??''),fmt:String,dirty(){saved++;},run:fn=>(...args)=>fn(...args),confirm:()=>true,toast(){},renderServices(){},renderLabor(){},loadSuggestions:async()=>{},prepareBaseControls(){},renderEditor(){},persist(){saved++;},setTimeout:()=>1,clearTimeout(){},location:{origin:'http://local'},
  api:async(url,data)=>{if(url==='/api/media'){if(uploadDelay)await new Promise(resolve=>uploadResolve=resolve);return {ref:'f'.repeat(64)+'.png',name:data.name};}return {};},
 };
 env.window.Drawing={init:opts=>callbacks=opts,load:doc=>{currentDoc=doc;},flush:async()=>{if(failFlush)throw Error('Falha de salvamento');if(pending)await pending;}};
@@ -40,5 +40,14 @@ const book=env.window.Book,pages=env.window.CroquiPages;
  book.load({croqui_pages:[one,{...two,image_pending:true}]});let flushed=[];
  env.window.Drawing.flush=async()=>{const page=callbacks.getPages().find(p=>p.id===callbacks.getPageId());flushed.push(page.id);if(page.image_pending)await callbacks.onImage('data:image/png;base64,CC',JSON.stringify(page.drawing),page.drawing);};
  await book.flushCroquis();assert.deepEqual(flushed,[one.id,two.id]);assert.equal(currentDoc.background_source.page,1);assert.equal(book.value().croqui_pages[1].image_pending,undefined);assert.equal(book.value().croqui_pages[1].croqui.ref,'f'.repeat(64)+'.png');
+ book.load({points:[{id:'p1',number:'1',photos:[]},{id:'p2',number:'2',photos:[]}],croqui_pages:[one]});
+ env.S.selected='laborA';env.S.editor={entry_id:'entryA',labor_id:'laborA',point_id:'p1',quantity:'2',materials:[{coefficient:'3'}]};env.S.editorTouched=true;env.S.editing=-1;
+ await book.selectPoint('p2');assert.equal(book.activeId(),'p2');assert.equal(env.S.editor,null);
+ assert.equal(book.value().point_drafts.p1.editor.quantity,'2');
+ env.S.selected='laborB';env.S.editor={entry_id:'entryB',labor_id:'laborB',point_id:'p2',quantity:'4',materials:[]};env.S.editing=-1;
+ await book.selectPoint('p1');assert.equal(env.S.editor.entry_id,'entryA');assert.equal(env.S.editor.materials[0].coefficient,'3');
+ const stash=book.value();assert.equal(stash.point_drafts.p2.editor.quantity,'4');
+ const lightweight=book.previewValue();assert.equal(lightweight.point_drafts,undefined);assert.equal(lightweight.croqui_pages[0].drawing,undefined);assert.ok(book.value().croqui_pages[0].drawing);
+ book.load(stash);await book.selectPoint('p2');assert.equal(env.S.editor.entry_id,'entryB');assert.equal(env.S.editor.quantity,'4');
  console.log('OK: migração, páginas independentes, troca após salvamento, falha de gravação, exportação e proteção contra resposta atrasada de outra obra.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
