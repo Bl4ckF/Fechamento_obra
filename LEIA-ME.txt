@@ -1,0 +1,457 @@
+ENGELMIG ENERGIA — FECHAMENTO DE OBRAS v11.2.0
+Campo Grande / MS
+
+ABRIR E ATUALIZAR
+1. Faça um backup na versão anterior e feche o servidor.
+2. Extraia todo o ZIP. Não execute de dentro do ZIP.
+3. Substitua os arquivos do programa e PRESERVE a pasta dados.
+4. Execute VERIFICAR_E_INICIAR.bat. Requer Python 3.9 ou superior, sem bibliotecas extras.
+   Mantenha a janela do servidor aberta. Em Linux/macOS: python3 app.py
+   Para sincronizar a equipe: Git instalado e acesso de escrita ao repositório.
+5. VERIFICAR_INSTALACOES.bat confere Python, Git, arquivos e acesso ao repositório.
+6. A interface abre normalmente em http://127.0.0.1:8766.
+   Recarregue a aba com Ctrl+F5. Confira v11.2.0 na lateral. Apenas substituir
+   os arquivos sem fechar e reabrir o servidor mantém o código antigo em execução.
+
+O banco e os backups das versões 1 a 10 continuam aceitos.
+Não execute duas versões para editar o mesmo banco simultaneamente.
+O pacote é código-fonte; não é um instalador do Python nem um executável.
+
+NOVIDADES DA VERSÃO 11.2 — CROQUI E ATUALIZAÇÃO
+- O editor reaproveita os textos e traços já reconhecidos, reduzindo as
+  repetições durante a seleção, o zoom e a movimentação.
+- A roda do mouse usa uma prévia leve enquanto gira e recupera a nitidez
+  após parar. A exportação mantém até 6.000 x 4.000 pixels.
+- As edições continuam com salvamento automático. A imagem de alta resolução
+  é preparada após cerca de três segundos sem interação. Antes de exportar,
+  trocar de página ou atualizar, o programa espera a última edição ser salva.
+- Ao reabrir um rascunho cuja imagem ficou pendente, o programa recupera a
+  edição e prepara novamente a imagem. As fontes do PDF ficam preservadas.
+- Mantém o atualizador automático por Releases da versão 11.1. A atualização
+  do código não depende da fila de registros da equipe nem de um clone Git.
+- O erro 404 informa que a Release pública não foi encontrada, com orientação
+  para conferir repositório, publicação e acesso. Não indica versão atualizada.
+- Inclui o iniciador corrigido para localizar a pasta do programa.
+
+NOVIDADES DA VERSÃO 11 — BASES E VALORES
+- As únicas bases de mão de obra e materiais são Mão de obra.xlsx e
+  MATERIAL.xlsm, na pasta fontes. As abas de estruturas e transformadores
+  também vêm desta MATERIAL.xlsm. Nenhum catálogo anterior é carregado.
+- Os valores da coluna VALOR aparecem somente nas páginas de soma de mão
+  de obra do PDF Mão de obra e materiais, com unitário, total por serviço e
+  total geral. O book, as páginas de materiais e o CSV não mostram preços.
+- O cálculo usa a precisão integral do valor salvo na planilha. O unitário
+  é exibido com até 6 casas, e cada linha é arredondada a centavos antes da
+  soma geral. Instalar e retirar continuam separados.
+- Nove linhas de PAGAMENTOS ESPECIAIS não têm coluna VALOR; C&M (LM), J280,
+  contém #REF!. Quando usadas, aparecem sem valor válido e o PDF informa
+  apenas o subtotal das linhas com valor. Ausência de preço não vira zero.
+- A partir desta versão, cada obra salva conserva os valores e a origem da
+  planilha usados naquele registro, inclusive ao restaurar seu backup.
+  Registros antigos sem valores consultam a base atual, com aviso no PDF.
+- Nas observações automáticas do book aparecem só os nomes da estrutura
+  selecionada ou da mão de obra, sem código SIAGO e sem quantidade.
+  As observações digitadas pelo usuário são preservadas.
+- Os identificadores dos itens válidos foram mantidos para conservar os
+  registros, rascunhos e padrões aprendidos. Preserve a pasta dados.
+- Para regenerar o catálogo após substituir essas mesmas duas planilhas:
+    python tools/importar_bases.py
+  Feche e reabra o programa depois. As fórmulas devem estar calculadas e
+  salvas no Excel; o extrator lê os resultados salvos, sem executar macros.
+
+RECURSOS DO CROQUI (VERSÃO 10)
+- Selecione texto, símbolo ou linha sobre a página. Arraste os quatro cantos
+  para mudar a escala e a alça ↻ para girar. Segure Shift para passos de 15°
+  no giro ou incrementos de 10% na escala. Textos e símbolos giram em torno
+  do ponto de inserção; linhas e traçados giram em torno de seu centro.
+- Esc ou clique numa região vazia desmarca o item. Durante um arraste, Esc
+  cancela a prévia sem apagar o objeto. As edições já concluídas permanecem.
+- A movimentação agrupa a renderização por quadro e evita copiar toda a
+  geometria do PDF. A prévia usa menos pixels durante o arraste. A exportação
+  mantém a resolução original de trabalho, até 6000 pixels / 24 megapixels.
+  O PNG é preparado em segundo plano nos navegadores que suportam esse recurso.
+- Criar / editar simbologia abre o editor de modelos pessoais: linha, círculo,
+  retângulo e texto. Arraste para desenhar ou mover e ajuste as medidas na
+  lateral. Polígonos e arcos existentes também têm propriedades editáveis.
+  Há Desfazer, Refazer, exclusão de elementos e criação de cópias.
+- Editar desenho do símbolo altera a simbologia selecionada. Um modelo da
+  rede gera uma cópia pessoal. Mudanças são salvas automaticamente; rascunhos
+  incompletos podem ser reabertos. Use Usar no croqui para inserir o modelo.
+  As demais instâncias já colocadas mantêm sua própria definição.
+- As simbologias pessoais ficam na pasta dados e entram no backup completo.
+  Cada símbolo colocado leva uma cópia do desenho para poder ser reaberto
+  mesmo sem a lista de modelos pessoais. Atualize preservando dados.
+- Pesquisar no PDF busca por nome, código, coordenada ou outro texto, sem
+  diferenciar maiúsculas e acentos. Escolha todas as páginas importadas ou
+  apenas a atual. Clique num resultado ou use Anterior / Próximo resultado.
+  A busca considera textos editados e legendas dos objetos; não recupera
+  trechos excluídos nem reconhece texto em imagens escaneadas (sem OCR).
+- Salvar PDF editado continua disponível para todas as páginas importadas.
+  O PDF exportado contém imagens em alta resolução; o projeto permanece
+  editável no programa. Faça backup para transportar também a edição.
+
+LIMPAR ALTERAÇÕES
+Substituir os arquivos do programa não apaga os dados. O banco em dados/ e
+uma cópia no navegador guardam o trabalho para a próxima abertura.
+- Limpar rascunho atual (tela Fechamento de obras): após a confirmação, limpa
+  os campos, serviços, editor, pontos, fotos e croqui do fechamento em edição.
+  Remove também sua cópia na lista de rascunhos automáticos e no navegador.
+  Um salvamento atrasado de uma aba antiga não pode recriar esse rascunho.
+  A aba antiga deve ser recarregada para continuar com um novo fechamento.
+- Limpar alterações do PDF (croqui): restaura a página importada, mantendo o
+  PDF como fundo. Desfazer recupera a edição, enquanto a página estiver aberta.
+O histórico de obras já registradas, os demais rascunhos e os materiais
+aprendidos são preservados. Limpar o rascunho não remove os registros usados
+para reconhecer os padrões. Não apague dados/ para atualizar o programa.
+Um backup anterior pode recuperar um rascunho que tenha sido limpo.
+
+SALVAMENTO AUTOMÁTICO POR RESPONSÁVEL
+Informe seu nome em Responsável. As alterações são salvas automaticamente,
+sem botão para guardar ajustes ou opção de lembrar a composição atual.
+O rascunho é gravado após cerca de 1 segundo sem edição e a cada 30 segundos
+enquanto a página estiver aberta, quando há alterações pendentes. O navegador
+também mantém uma cópia local. Uma consulta sem edição não cria um registro.
+Ao trocar a mão de obra, o editor atual é gravado antes de abrir outro.
+
+Materiais, quantidades, unidades, movimentos e variantes ficam no histórico
+com responsável, obra e data/hora. Campos incompletos também ficam guardados;
+só as composições válidas entram no reconhecimento do padrão. Se o nome
+estiver vazio, o ajuste fica não identificado até o preenchimento.
+A conferência é necessária para adicionar o serviço e concluir a obra,
+mas não para salvar as alterações.
+
+Em Registros, Rascunhos automáticos por responsável permite continuar
+um trabalho antes de salvar a versão final. Em Materiais aprendidos,
+consulte os padrões, as frequências e o histórico de alterações.
+A cada ciclo de 30 segundos com alterações são atualizadas as cópias:
+  dados/registros_responsaveis/<nome>_<identificador>.json
+  dados/padroes_aprendidos.json
+Os nomes são adaptados para uso no Windows. O banco mantém o histórico completo.
+
+COMO O PADRÃO É IDENTIFICADO
+- Todos os registros de composição são preservados: repetidos, alterações,
+  versões salvas da obra, entradas duplicadas e registros de outras máquinas.
+- Cada salvamento efetivo é uma amostra, mesmo que seus materiais sejam iguais
+  aos de outro salvamento. Ajustes anteriores continuam no histórico e no padrão.
+- Cada amostra recebe um identificador. Uma nova transferência do mesmo registro
+  mantém esse identificador; baixar ou reenviar não é um novo salvamento.
+- A contagem representa registros de composição, não o número de obras distintas.
+  Campos incompletos ficam guardados; somente composições válidas e identificadas
+  pelo responsável participam do cálculo do padrão.
+- Instalar/retirar, LM/LV, configuração, movimento e variante ficam separados.
+  Transformadores exigem a potência/modelo na variante complementar.
+- O conjunto de materiais mais frequente é reconhecido. O preenchimento utiliza
+  uma composição realmente registrada desse conjunto: a mais frequente e, no
+  empate de quantidades, a mais recente. Não mistura quantidades de registros.
+- A tela mostra frequência por material e quantidades observadas. Sem maioria
+  de conjuntos, escolha e confira a composição. Seu último ajuste identificado
+  tem prioridade para uma única variante; depois vem o padrão coletivo.
+- Excluir um material altera o ajuste atual. Excluir um serviço não apaga as
+  versões anteriores do histórico: elas continuam disponíveis para análise.
+- Os registros das versões anteriores também são aproveitados. As antigas
+  memórias manuais permanecem acessíveis, sem inventar um registro de uso.
+
+SINCRONIZAÇÃO AUTOMÁTICA DA EQUIPE
+Repositório: https://github.com/Bl4ckF/fechamento_obra
+Branch dos registros: registros-materiais
+Branch do programa: main
+
+1. Em cada computador, instale o Git e configure uma conta GitHub autorizada
+   a ler e escrever nesse repositório. Use Git Credential Manager ou GitHub CLI.
+   Consulte GIT.txt para os comandos. Cada integrante pode usar sua própria
+   conta, desde que tenha permissão de colaborador no repositório.
+2. Abra o programa e confira Configurações. A sincronização vem ativada.
+3. O servidor envia e recebe os registros ao iniciar e a cada minuto. Não é
+   preciso exportar arquivos manualmente. A janela do servidor deve ficar aberta.
+4. Veja a situação na faixa de sincronização ou use Sincronizar agora.
+   Sem rede, Git ou permissão de escrita, o histórico permanece local e o
+   programa informa o motivo. Os envios serão tentados novamente.
+5. Ao receber registros, a base local é atualizada. As próximas seleções de
+   mão de obra consultam a base reunida. Um editor já aberto não é alterado
+   no meio da edição; escolha novamente a mão de obra para carregar a base.
+
+São compartilhados responsável, data, mão de obra, variante e materiais.
+Quem tem acesso ao repositório terá acesso a esses registros. Fotos, PDF,
+croqui, endereço, observações gerais e número da obra não são enviados por
+essa sincronização. Não inclua informação privada no texto das variantes.
+
+A sincronização usa uma cópia Git separada dentro de dados/sincronizacao,
+funciona também quando o programa foi extraído de ZIP e não troca a branch
+do código. Os JSON ficam em registros/<prefixo>/<identificador>.json na
+branch registros-materiais. Cada registro é imutável. O programa não força
+push nem sobrescreve o histórico remoto. Envios simultâneos são reunidos
+sobre a versão remota mais recente. Uma branch protegida contra push direto
+precisa ter sua regra de acesso configurada pelo proprietário.
+
+As credenciais são gerenciadas pelo Git do computador, não por um campo
+no programa. Não coloque senha ou token na URL do repositório. A consulta
+em segundo plano não abre login; faça a autenticação antes pelo terminal.
+
+ARQUIVOS LOCAIS E PRÓXIMAS VERSÕES
+Exportar registros da equipe e Reunir registros continuam disponíveis para
+trabalhar com arquivos. Reimportar preserva o identificador de cada registro.
+Baixar base para futuras versões gera padroes_materiais.json: copie para
+ data/padroes_materiais.json
+antes de publicar uma nova versão. Novas instalações também podem receber
+os registros diretamente do repositório. Preserve dados/ ao atualizar.
+
+A base distribuível omite os campos de responsável, obra, observações gerais
+e fotos. Variante/configuração é mantida para distinguir as composições.
+Alternativa para reunir arquivos pelo terminal:
+  python PREPARAR_PADROES.py "exportacoes/*.json"
+Não inclua a pasta dados/ no commit do código. A branch dos registros é
+alimentada separadamente pelo programa.
+
+LISTA SIMPLIFICADA DE MATERIAIS
+A operação aparece como INSTALAR, RETIRAR ou EXECUTAR, conforme o catálogo.
+Novos materiais assumem o movimento da mão de obra; ele pode ser ajustado
+quando necessário. A tabela mostra material, quantidade por serviço,
+unidade e movimento. Use + Material para buscar por código ou descrição.
+Base MATERIAL.xlsm e famílias sugeridas ficam nas seções expansíveis.
+
+As quantidades são POR UNIDADE DE MÃO DE OBRA:
+2 peças por serviço x 5 serviços = 10 peças; o padrão guarda 2 por serviço.
+No transformador, INST. e DESAT. são colunas independentes. O filtro de
+retirada usa a coluna DESAT.; não converte a instalação em retirada.
+Unidades ausentes e códigos inconsistentes permanecem sinalizados.
+
+BASE ORIGINAL
+São usadas 733 entradas de mão de obra, 2.652 materiais, 102 combinações
+de estrutura/poste e 112 configurações de transformador.
+MATERIAL.xlsm contém 2.651 materiais com unidade na aba Lista de Materiais.
+O material 90442 aparece só em Dados - Estrutura e não tem unidade na fonte;
+informe a unidade correta no uso. A aba Cód. Trafo não existe nesta planilha.
+Os kits não incluem automaticamente o transformador principal e todos os
+complementos. Confira o catálogo e o elo. As fontes estão em fontes/.
+Macros das planilhas não são executadas.
+
+BOOK, MÃO DE OBRA E MATERIAIS — ARQUIVOS SEPARADOS
+TODAS AS PÁGINAS DO CROQUI VÊM PRIMEIRO NO BOOK, antes das fotos.
+Cadastre os pontos e vincule cada mão de obra ao ponto correspondente.
+Ao lado das fotos aparecem somente as mãos de obra
+INSTALAR (Instalado) e RETIRAR (Desativado), somente com os nomes, sem código
+e sem quantidade.
+Quando uma estrutura da base é selecionada (ex.: N1, N2), o book apresenta
+essa estrutura e o tipo de poste, em vez do nome genérico da mão de obra.
+As coordenadas aparecem em UTM, com fuso/faixa, leste e norte em metros:
+  21K 748267 7734703
+O fuso/faixa acompanha a localização; não força 21K em outra região.
+Os IDs de TD, religador e circuito ficam no cadastro para consulta, mas não
+são impressos no book.
+As observações de instalação/desativação e do ponto ficam junto às fotos.
+Não há páginas de detalhamento por ponto. Textos longos continuam em outro
+quadro fotográfico, com indicação de continuação, sem cortar as informações.
+Materiais e composições não aparecem nessas páginas. Serviços EXECUTAR
+permanecem no registro e no relatório separado, sem virar instalação/retirada.
+A somagem dos condutores continua em páginas próprias, como solicitado.
+Fotos: JPG, PNG e WebP, até 30 por ponto, redimensionadas para até 1.800 pixels.
+
+Em Pontos e fotos há dois botões:
+- Visualizar book: croqui primeiro, fotos, mãos de obra e somagem dos condutores.
+- Mão de obra e materiais: documento separado com os totais de mãos de obra
+  e materiais. Serviços repetidos são somados por código, operação, escopo e
+  descrição e valor unitário. Instalar e retirar ficam separados. Não há páginas de composição
+  individual neste PDF.
+Nos dois documentos, use Imprimir / salvar PDF. Escolha A4, escala 100%
+e desative cabeçalhos e rodapés automáticos do navegador.
+Após salvar, Mão de obra e materiais / CSV gera um arquivo para Excel,
+incluindo ponto, operação e vínculo de cada material com a mão de obra.
+No CSV, os serviços repetidos continuam separados no detalhamento das
+composições; a simplificação para totais se aplica ao PDF.
+Os mesmos acessos ficam disponíveis em Registros.
+O modelo original está em modelos/BOOK_OBRA_ATUALIZADO_1.xlsx.
+A logo corporativa enviada aparece na interface e no cabeçalho dos documentos.
+
+EDITAR O CROQUI E ESCOLHER PÁGINAS
+1. Em Croqui e condutores, clique em Importar imagem ou PDF.
+2. Escolha Uma página específica, Todas as páginas ou Intervalo / lista.
+   Exemplos de intervalos: 2-5 ou 1,3,7-9. A ordem é a do PDF original.
+   Confira a prévia e, se necessário, gire a seleção. Clique em Importar seleção.
+3. No editor, Anterior / Próxima e Página do croqui alternam entre as páginas.
+   A alteração atual é gravada antes da troca. Cada página tem seus próprios
+   textos, linhas, símbolos e observações. Remover esta página mantém as demais.
+4. Clique no texto reconhecido e digite diretamente. Para MOVER o texto,
+   arraste a alça com setas que aparece acima dele. Também pode ajustar X/Y
+   na lateral. A alça aceita as setas do teclado; Shift aumenta o passo.
+5. Textos, símbolos e linhas ficam selecionáveis ao mesmo tempo, sem trocar
+   modo. As propriedades do item selecionado aparecem na barra lateral.
+   Em textos, ajuste fonte, tamanho, cor, rotação, negrito/itálico e posição.
+6. Localizar texto pesquisa na página atual. A roda do mouse amplia/reduz
+   em torno do ponteiro (25% a 800%). Segure o botão do meio e arraste para
+   navegar. O menu Zoom também permite Ajustar à largura.
+7. Restaurar texto/linha original recupera o item selecionado. Limpar alterações
+   do PDF restaura a página atual; as outras páginas permanecem como estavam.
+   Desfazer/refazer atua na página aberta. A troca de página reinicia o histórico
+   de desfazer, mas mantém as alterações salvas.
+8. Salvar PDF editado baixa SOMENTE as páginas do croqui, na ordem importada,
+   incluindo textos movidos, símbolos e linhas. O download é independente do
+   book e não exige concluir a obra. Confira a pasta Downloads do navegador.
+
+O PDF separado é uma cópia visual consolidada em imagens de alta resolução;
+não mantém textos selecionáveis nem camadas vetoriais editáveis nesse arquivo.
+Para continuar editando, reabra a obra no programa ou restaure o backup completo.
+O original não é sobrescrito. A cópia é encaixada proporcionalmente na folha,
+sem distorcer o projeto. O book continua disponível em seu botão próprio.
+
+O desenho à mão livre foi retirado. Há símbolos e linhas personalizáveis.
+Croquis antigos conservam sua aparência. Importar outro arquivo SUBSTITUI
+TODAS as páginas e edições do croqui atual. Faça backup antes se precisar
+manter a versão anterior. A nova importação não é desfeita pelo botão Desfazer.
+
+Textos não alterados mantêm a aparência original. Ao editar ou mover, fontes
+especiais podem ser substituídas pela fonte escolhida. O processamento é local.
+PDFs escaneados e letras convertidas em desenho não contêm texto selecionável.
+Esta versão não inclui OCR. Textos verticais especiais permanecem no fundo.
+Para habilitar textos e linhas em croquis antigos que só guardavam a imagem,
+importe novamente o PDF original. As edições já feitas não são transferidas
+para o arquivo reimportado: preserve um backup antes.
+
+Limites: PDF de até 50 MB, 100 páginas por obra, 3.000 blocos de texto,
+5.000 traços reconhecidos e 1.000 alterações por página. Projetos com muitas
+geometrias podem exigir intervalos menores. Também aceita imagem e captura
+do mapa como fundo, sem reconhecimento de textos/linhas nessas imagens.
+Não há escala física; a escala dos símbolos é visual em porcentagem.
+
+NITIDEZ DO PROJETO
+A importação de PDF usa até 6.000 pixels no maior lado e 24 megapixels.
+As imagens do croqui preservam a resolução de origem até esses limites;
+não usam a redução das fotos dos pontos para 1.800 pixels. A página e o
+croqui editado são guardados em PNG, sem conversão automática para JPEG.
+O editor recalcula a resolução da tela conforme o zoom e a densidade do
+monitor, até 24 megapixels. A imagem exportada para o book usa até
+6.000 x 4.000 pixels. A resolução continua finita, inclusive no zoom máximo.
+Uma imagem já desfocada não ganha detalhes que não existam no original.
+
+Croquis importados nas versões anteriores já podem ter perdido resolução.
+Para aproveitar a nova nitidez, faça um backup e importe o PDF/imagem original
+novamente. A nova importação substitui o conjunto atual de páginas e edições.
+O salvamento de textos e símbolos continua automático. Zoom e deslocamento
+mudam apenas a visualização, sem alterar as posições do projeto ou o book.
+Limite por imagem salva: 32 MB. Páginas maiores que esse limite em PNG
+exigem recortar a área necessária antes da importação. Os backups podem
+ficar maiores ao reunir croquis em alta resolução.
+
+SIMBOLOGIAS DA REDE NO CROQUI
+A biblioteca contém 119 símbolos esquemáticos organizados por categoria:
+postes, equipamentos, proteção/manobra, redes/conexões, estais/aterramento,
+iluminação, identificação e 51 identificações de estruturas da base MATERIAL.xlsm.
+A biblioteca fica na barra lateral. Use a busca (ex.: N1, religador,
+transformador) ou filtre por categoria.
+1. Clique no símbolo da biblioteca e depois no local desejado da página.
+2. Clique no símbolo colocado e arraste para mover. As setas ajustam a posição;
+   Shift + seta move em passos maiores. Esc cancela uma inserção pendente.
+3. Edite Nome / legenda para mudar o nome exibido. Ajuste Escala (%) de 10%
+   a 1.000%, tipo, situação (existente, instalar ou desativar), rotação, cor e
+   posição X/Y. Duplique ou exclua pelo painel.
+4. Para substituir visualmente um símbolo já impresso no PDF, posicione o
+   novo símbolo e ative Cobrir o símbolo original com fundo branco, se necessário.
+   A cobertura também esconde linhas que estejam naquela área.
+5. As alterações ficam no croqui, no book, no registro e no backup.
+   Desfazer/refazer também funciona para símbolos.
+
+A biblioteca é esquemática: confira a legenda e as convenções específicas do
+projeto/concessionária. Não é uma reprodução certificada de todas as pranchas
+da NDU. Símbolos já impressos no PDF não são separados automaticamente em
+objetos; a biblioteca insere elementos sobre a página importada.
+
+LINHAS DO PROJETO
+- + Nova linha: clique e arraste, ou clique nas duas pontas. Shift alinha em 45°.
+- Clique no traço para editar cor, espessura, tracejado, setas e legenda.
+  Arraste o traço para mover. Em linhas retas, arraste as pontas para alterar
+  o comprimento/direção ou informe as coordenadas na lateral.
+- Traços vetoriais simples do PDF são reconhecidos na importação. Também é
+  possível mover curvas e caminhos como um conjunto, mudar estilo ou excluir.
+  O programa reprocessa o original omitindo somente os traços alterados.
+- Áreas preenchidas, recortes complexos, transparências e certos traços não
+  são convertidos. Permanecem visíveis no fundo. Em PDFs escaneados/imagens,
+  as linhas são pixels: acrescente linhas por cima; não há seleção automática.
+- PDF com senha: texto continua editável após abrir com a senha. Para linhas
+  nativas, importe uma cópia sem senha. Nenhuma senha é guardada no registro.
+- O backup completo inclui o original necessário para continuar editando
+  as linhas após restaurar em outro computador.
+
+CONDUTORES
+Total em metros = comprimento x número de condutores + acréscimo.
+Instalados e desativados ficam separados. Lance os cabos nos serviços também;
+a somagem dos trechos não é adicionada novamente aos materiais.
+Se não houve condutores, marque a opção correspondente.
+
+MAPA QFIELD
+Reutiliza a base do Book Poda: 25.469 TDs, 471 religadores e postes.
+Pesquise coordenada, código de equipamento ou circuito. Exemplos:
+  -20.554185, -54.578959
+  20.554185°S 54.578959°W
+  21K 753302 7725693 (UTM com zona/faixa e coordenadas em metros)
+O raio padrão é 1.200 m, ajustável. Referências próximas precisam de
+conferência da ligação elétrica. As camadas são locais; o fundo Esri requer
+internet. Não há sincronização automática com novos arquivos QField.
+
+AVISO DE ATUALIZAÇÃO
+Ao abrir e a cada 15 minutos, o programa consulta a última Release estável
+publicada no repositório configurado. Também é possível consultar em
+Configurações. Tags isoladas, rascunhos e pré-releases não acionam o aviso.
+A comparação usa a versão instalada e a tag vX.Y.Z. A instalação automática
+usa um BAT no Windows e preserva dados/, .git e runtime/. Não depende do
+estado da sincronização dos registros. O Git continua necessário para enviar
+os registros da equipe, mas não para instalar uma Release pública.
+Consulte PUBLICAR_RELEASE.txt para preparar a publicação. A primeira troca
+para este atualizador precisa ser feita manualmente, preservando dados.
+
+FORMS
+O endereço direto do formulário fornecido já está configurado. A mensagem
+antiga do Teams é substituída automaticamente. Links de login Microsoft
+compatíveis são convertidos para o formulário contido neles, sem guardar
+login_hint, nonce ou os outros parâmetros temporários da sessão.
+Em Finalizar / Forms, clique em Abrir link do formulário, entre com a conta
+corporativa caso solicitado, preencha e confirme o envio. O resumo da obra
+continua disponível para copiar. O envio do Forms permanece manual.
+
+BACKUP E VALIDAÇÃO
+O backup contém obras, rascunhos, histórico, composições, configurações,
+fotos, croquis e objetos editáveis. A restauração mescla os registros e
+cria antes uma cópia do banco em dados/backups.
+Limite de importação JSON: 300 MB. Para bases maiores, feche o servidor
+e copie toda a pasta dados. Preserve dados/ em todas as atualizações.
+
+Testes: python -m unittest discover -s tests -v
+Testes opcionais com Node.js:
+  node tests/test_frontend_models.js
+  node tests/test_drawing_editor.js
+  node tests/test_pdf_render_pipeline.js
+  node tests/test_book_pages_editor.js
+  node tests/test_croqui_pages.js
+A sincronização foi testada com duas instalações e um repositório Git local,
+incluindo concorrência, falha de conexão, permissão negada e repetição de
+registros. PDF.js foi verificado com um PDF de duas páginas, incluindo rotação
+e renderização. A edição de texto foi verificada com páginas comuns e giradas,
+exclusão, restauração, reabertura e salvamento automático. Os testes também
+conferem os totais do relatório e impedem que um salvamento antigo recupere
+um rascunho limpo. A seleção nativa no navegador, a interface gráfica e o
+iniciador BAT ainda precisam de conferência no Windows. O acesso autenticado ao seu GitHub depende das
+credenciais configuradas em cada máquina.
+
+PDF.js 5.6.205 (build legacy) está incluído em web/vendor/pdfjs. As licenças
+da biblioteca e dos recursos estão nessa pasta. Não requer instalar Node.js.
+Fontes técnicas: https://mozilla.github.io/pdf.js/examples/
+https://git-scm.com/docs/git-push
+https://cli.github.com/manual/gh_auth_login
+
+
+ATUALIZACAO AUTOMATICA POR GITHUB RELEASES (WINDOWS)
+----------------------------------------------------
+1. Publicar o codigo na branch main do repositorio configurado.
+2. Ajustar app.py (VERSION) e version.json (version) para a mesma nova versao.
+3. Criar uma Release publicada (nao rascunho, nao prerelease), tag vX.Y.Z.
+4. Opcional: anexar ZIP completo do programa com app.py, updates.py,
+   update_worker.py, version.json, web/ etc na mesma pasta. Sem anexo,
+   o atualizador usa o ZIP da tag oferecido pelo proprio GitHub.
+5. No aplicativo: Configuracoes > Verificar atualizacao > Instalar atualizacao.
+6. Apos baixar, o programa inicia um BAT temporario independente,
+   encerra o servidor, instala os arquivos preservando dados/, .git e runtime/
+   e executa INICIAR.bat automaticamente. O navegador pode exigir F5.
+
+IMPORTANTE: mantenha o repositorio PUBLICO para atualizacao sem login.
+O BAT cria um log atualizacao.log na pasta temporaria engelmig-update-*.
+Se a atualizacao falhar, os arquivos substituidos sao restaurados.
+Nunca inclua a pasta dados/ em releases para compartilhar com outras pessoas.
+Alteracoes no codigo local podem ser sobrescritas; dados/ nao.

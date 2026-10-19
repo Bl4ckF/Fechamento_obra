@@ -1,0 +1,59 @@
+ATENCAO: o sistema de atualizacao usa GitHub Releases e dispensa Git ou clone local.
+O Git abaixo e opcional para enviar/receber registros da equipe e desenvolver o codigo.
+Veja PUBLICAR_RELEASE.txt para publicar novas versoes.
+
+COMANDOS GIT — FECHAMENTO DE OBRAS
+
+Clonar pela primeira vez:
+  git clone https://github.com/Bl4ckF/fechamento_obra.git
+  cd fechamento_obra
+
+Copie o CONTEÚDO da pasta Fechamento_Obras_Engelmig do ZIP para a raiz
+do clone (a mesma pasta que contém .git). Preserve sua pasta dados.
+Não copie apenas a pasta inteira como uma subpasta se o projeto já estiver
+na raiz do repositório. Não inclua dados de obras ou backups no Git.
+
+Antes de atualizar uma cópia existente:
+  cd fechamento_obra
+  git status
+  git pull --ff-only origin main
+
+Depois de copiar as alterações do programa para o clone:
+  git status
+  git add .
+  git diff --cached --stat
+  git commit -m "Adiciona croqui sobre PDF e sincronizacao dos registros da equipe"
+  git push origin main
+
+Criar uma tag para esta versão, depois de enviar o commit:
+  git tag -a v5.0.0 -m "Fechamento de Obras v5.0.0"
+  git push origin v5.0.0
+
+Atualizar código e obter as tags em outro computador:
+  git pull --ff-only origin main
+  git fetch --tags
+
+Use o nome real da branch se ela não for main. Se v5.0.0 já existir,
+escolha uma nova versão; não force a substituição da tag publicada.
+Se o Git apontar conflito ou alterações locais, preserve suas alterações
+e resolva a divergência antes de continuar. Não use reset --hard.
+
+O .gitignore incluído exclui dados/, backups JSON, bancos SQLite e caches.
+Ele não remove arquivos já rastreados: confira git status e o conteúdo
+preparado antes do commit. A publicação no GitHub não foi feita por este ZIP.
+
+AUTENTICAÇÃO PARA SINCRONIZAR REGISTROS
+
+O programa usa a credencial já configurada no Git. Não digite senha ou
+token no endereço do repositório. Se usar GitHub CLI, instalado à parte:
+  gh auth login
+  gh auth setup-git
+Escolha GitHub.com, HTTPS e autenticação pelo navegador. Use uma conta
+com permissão de escrita no repositório Bl4ckF/fechamento_obra.
+
+Depois abra o programa e use Configurações > Sincronizar agora.
+Os registros são enviados à branch registros-materiais automaticamente.
+Não é necessário fazer checkout dessa branch no seu projeto.
+
+Documentação: https://cli.github.com/manual/gh_auth_login
+https://cli.github.com/manual/gh_auth_setup-git

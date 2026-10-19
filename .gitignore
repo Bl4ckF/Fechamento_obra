@@ -1,0 +1,9 @@
+/dados/
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+*.sqlite3*
+backup_fechamento_engelmig*.json
+/dist/

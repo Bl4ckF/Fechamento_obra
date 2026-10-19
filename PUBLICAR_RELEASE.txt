@@ -1,0 +1,14 @@
+PUBLICAR VERSAO PARA ATUALIZACAO AUTOMATICA
+
+1) Edite app.py: VERSION='11.2.0' (exemplo)
+2) Edite version.json: "version":"11.2.0"
+3) Envie ao GitHub os arquivos novos e a versao alterada (inclusive updates.py e update_worker.py).
+4) No GitHub, abra Releases > Draft a new release.
+5) Crie a tag v11.2.0 apontando para o commit com a versao 11.2.0.
+6) Publique a Release (Latest, nao Pre-release).
+7) Opcional: anexe um ZIP do programa, sem dados/ nem .git. Se nao anexar, o GitHub entrega o ZIP da tag automaticamente.
+8) Na instalacao anterior, abra Configuracoes > Verificar atualizacao > Instalar atualizacao.
+
+O app inicia um BAT EXTERNO que aguarda o servidor terminar, copia os arquivos, preserva dados/ e inicia INICIAR.bat.
+Requer Windows, acesso ao GitHub e repositorio publico.
+A primeira instalacao deste atualizador precisa ser feita substituindo os arquivos manualmente; DEPOIS disso atualiza sozinho.

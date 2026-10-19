@@ -1,0 +1,3369 @@
+{
+  "schema": 1,
+  "title": "Biblioteca esquemática de distribuição",
+  "notice": "Símbolos esquemáticos editáveis; confira a legenda do projeto para convenções específicas da concessionária.",
+  "symbols": [
+    {
+      "id": "poste_dt",
+      "name": "Poste de concreto duplo T",
+      "group": "Postes",
+      "ops": [
+        [
+          "rect",
+          -22,
+          -22,
+          44,
+          44,
+          false
+        ],
+        [
+          "line",
+          -22,
+          -22,
+          22,
+          22
+        ],
+        [
+          "line",
+          -22,
+          22,
+          22,
+          -22
+        ]
+      ],
+      "tag": "DT"
+    },
+    {
+      "id": "poste_circular",
+      "name": "Poste de concreto circular",
+      "group": "Postes",
+      "ops": [
+        [
+          "circle",
+          0,
+          0,
+          25,
+          false
+        ],
+        [
+          "circle",
+          0,
+          0,
+          16,
+          "projetado"
+        ]
+      ],
+      "tag": "CC"
+    },
+    {
+      "id": "poste_madeira",
+      "name": "Poste de madeira",
+      "group": "Postes",
+      "ops": [
+        [
+          "circle",
+          0,
+          0,
+          25,
+          "projetado"
+        ]
+      ],
+      "tag": "MAD"
+    },
+    {
+      "id": "poste_aco",
+      "name": "Poste tubular de aço",
+      "group": "Postes",
+      "ops": [
+        [
+          "circle",
+          0,
+          0,
+          25,
+          false
+        ],
+        [
+          "circle",
+          0,
+          0,
+          12,
+          false
+        ],
+        [
+          "text",
+          0,
+          6,
+          "A",
+          18
+        ]
+      ],
+      "tag": "AÇO"
+    },
+    {
+      "id": "poste_ornamental",
+      "name": "Poste ornamental",
+      "group": "Postes",
+      "ops": [
+        [
+          "circle",
+          0,
+          0,
+          25,
+          false
+        ],
+        [
+          "circle",
+          0,
+          0,
+          6,
+          true
+        ],
+        [
+          "line",
+          -35,
+          0,
+          35,
+          0
+        ],
+        [
+          "line",
+          0,
+          -35,
+          0,
+          35
+        ]
+      ],
+      "tag": "ORN"
+    },
+    {
+      "id": "poste_trilho",
+      "name": "Poste de trilho",
+      "group": "Postes",
+      "ops": [
+        [
+          "line",
+          -20,
+          -25,
+          20,
+          -25
+        ],
+        [
+          "line",
+          -20,
+          25,
+          20,
+          25
+        ],
+        [
+          "line",
+          -8,
+          -25,
+          -8,
+          25
+        ],
+        [
+          "line",
+          8,
+          -25,
+          8,
+          25
+        ]
+      ],
+      "tag": "TR"
+    },
+    {
+      "id": "poste_fibra",
+      "name": "Poste de fibra",
+      "group": "Postes",
+      "ops": [
+        [
+          "circle",
+          0,
+          0,
+          25,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "F",
+          18
+        ]
+      ],
+      "tag": "PRFV"
+    },
+    {
+      "id": "poste_duplo",
+      "name": "Postes duplos",
+      "group": "Postes",
+      "ops": [
+        [
+          "circle",
+          -22,
+          0,
+          15,
+          false
+        ],
+        [
+          "circle",
+          22,
+          0,
+          15,
+          false
+        ],
+        [
+          "line",
+          -8,
+          -8,
+          8,
+          -8
+        ],
+        [
+          "line",
+          -8,
+          8,
+          8,
+          8
+        ]
+      ],
+      "tag": "DUPLO"
+    },
+    {
+      "id": "trafo_empresa",
+      "name": "Transformador da concessionária",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -20,
+          0
+        ],
+        [
+          "poly",
+          [
+            [
+              -20,
+              -27
+            ],
+            [
+              29,
+              0
+            ],
+            [
+              -20,
+              27
+            ]
+          ],
+          "projetado"
+        ]
+      ],
+      "tag": "TD"
+    },
+    {
+      "id": "trafo_particular",
+      "name": "Transformador particular",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -20,
+          0
+        ],
+        [
+          "poly",
+          [
+            [
+              -20,
+              -27
+            ],
+            [
+              29,
+              0
+            ],
+            [
+              -20,
+              27
+            ]
+          ],
+          "projetado"
+        ],
+        [
+          "line",
+          -15,
+          -18,
+          17,
+          0
+        ],
+        [
+          "line",
+          -15,
+          -8,
+          6,
+          4
+        ]
+      ],
+      "tag": "PART"
+    },
+    {
+      "id": "trafo_exclusivo",
+      "name": "Transformador de uso exclusivo",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -20,
+          0
+        ],
+        [
+          "poly",
+          [
+            [
+              -20,
+              -27
+            ],
+            [
+              29,
+              0
+            ],
+            [
+              -20,
+              27
+            ]
+          ],
+          "projetado"
+        ],
+        [
+          "text",
+          0,
+          43,
+          "EXC",
+          13
+        ]
+      ],
+      "tag": "TD EXC"
+    },
+    {
+      "id": "trafo_cabina",
+      "name": "Transformador em cabine",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "rect",
+          -32,
+          -32,
+          64,
+          64,
+          false
+        ],
+        [
+          "poly",
+          [
+            [
+              -15,
+              -20
+            ],
+            [
+              20,
+              0
+            ],
+            [
+              -15,
+              20
+            ]
+          ],
+          "projetado"
+        ]
+      ],
+      "tag": "CAB"
+    },
+    {
+      "id": "trafo_chave_deslocada",
+      "name": "Transformador com chave deslocada",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "line",
+          0,
+          -45,
+          0,
+          -25
+        ],
+        [
+          "poly",
+          [
+            [
+              -25,
+              -25
+            ],
+            [
+              25,
+              -25
+            ],
+            [
+              0,
+              25
+            ]
+          ],
+          true
+        ]
+      ],
+      "tag": "TD / CH"
+    },
+    {
+      "id": "trafo_bt_desconectada",
+      "name": "Transformador desconectado da BT",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "poly",
+          [
+            [
+              -25,
+              -25
+            ],
+            [
+              25,
+              -25
+            ],
+            [
+              0,
+              25
+            ]
+          ],
+          false
+        ],
+        [
+          "line",
+          -20,
+          32,
+          20,
+          32
+        ]
+      ],
+      "tag": "SEM BT"
+    },
+    {
+      "id": "trafo_mono",
+      "name": "Transformador monofásico",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -20,
+          0
+        ],
+        [
+          "poly",
+          [
+            [
+              -20,
+              -27
+            ],
+            [
+              29,
+              0
+            ],
+            [
+              -20,
+              27
+            ]
+          ],
+          "projetado"
+        ],
+        [
+          "text",
+          0,
+          43,
+          "1F",
+          14
+        ]
+      ],
+      "tag": "1F"
+    },
+    {
+      "id": "trafo_trifasico",
+      "name": "Transformador trifásico",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -20,
+          0
+        ],
+        [
+          "poly",
+          [
+            [
+              -20,
+              -27
+            ],
+            [
+              29,
+              0
+            ],
+            [
+              -20,
+              27
+            ]
+          ],
+          "projetado"
+        ],
+        [
+          "text",
+          0,
+          43,
+          "3F",
+          14
+        ]
+      ],
+      "tag": "3F"
+    },
+    {
+      "id": "banco_capacitor",
+      "name": "Banco de capacitores",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "line",
+          0,
+          -40,
+          0,
+          -9
+        ],
+        [
+          "line",
+          -27,
+          -9,
+          27,
+          -9
+        ],
+        [
+          "line",
+          -27,
+          9,
+          27,
+          9
+        ],
+        [
+          "line",
+          0,
+          9,
+          0,
+          40
+        ]
+      ],
+      "tag": "BC"
+    },
+    {
+      "id": "regulador_tensao",
+      "name": "Regulador de tensão",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -28,
+          0
+        ],
+        [
+          "rect",
+          -28,
+          -25,
+          56,
+          50,
+          false
+        ],
+        [
+          "line",
+          28,
+          0,
+          45,
+          0
+        ],
+        [
+          "text",
+          0,
+          7,
+          "RT",
+          20
+        ]
+      ],
+      "tag": "RT"
+    },
+    {
+      "id": "religador",
+      "name": "Religador de linha",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -28,
+          0
+        ],
+        [
+          "rect",
+          -28,
+          -25,
+          56,
+          50,
+          false
+        ],
+        [
+          "line",
+          -28,
+          25,
+          28,
+          -25
+        ],
+        [
+          "line",
+          28,
+          0,
+          45,
+          0
+        ],
+        [
+          "text",
+          0,
+          -32,
+          "RL",
+          13
+        ]
+      ],
+      "tag": "RL"
+    },
+    {
+      "id": "seccionalizador",
+      "name": "Seccionalizador automático",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -28,
+          0
+        ],
+        [
+          "rect",
+          -28,
+          -25,
+          56,
+          50,
+          false
+        ],
+        [
+          "line",
+          28,
+          0,
+          45,
+          0
+        ],
+        [
+          "text",
+          0,
+          7,
+          "SEC",
+          17
+        ]
+      ],
+      "tag": "SEC"
+    },
+    {
+      "id": "chave_fusivel",
+      "name": "Chave fusível",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -40,
+          0,
+          -20,
+          0
+        ],
+        [
+          "rect",
+          -20,
+          -10,
+          40,
+          20,
+          false
+        ],
+        [
+          "line",
+          -20,
+          10,
+          20,
+          -10
+        ],
+        [
+          "line",
+          20,
+          0,
+          40,
+          0
+        ]
+      ],
+      "tag": "CF"
+    },
+    {
+      "id": "chave_fusivel_religadora",
+      "name": "Chave fusível religadora",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -40,
+          0,
+          -24,
+          0
+        ],
+        [
+          "rect",
+          -24,
+          -12,
+          48,
+          24,
+          false
+        ],
+        [
+          "line",
+          -24,
+          12,
+          24,
+          -12
+        ],
+        [
+          "line",
+          24,
+          0,
+          40,
+          0
+        ],
+        [
+          "text",
+          0,
+          -24,
+          "R",
+          14
+        ]
+      ],
+      "tag": "CFR"
+    },
+    {
+      "id": "chave_faca",
+      "name": "Chave seccionadora unipolar",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -18,
+          0
+        ],
+        [
+          "circle",
+          -18,
+          0,
+          3,
+          false
+        ],
+        [
+          "line",
+          -18,
+          0,
+          19,
+          -23
+        ],
+        [
+          "circle",
+          24,
+          0,
+          3,
+          false
+        ],
+        [
+          "line",
+          24,
+          0,
+          42,
+          0
+        ]
+      ],
+      "tag": "CS 1P"
+    },
+    {
+      "id": "chave_tripolar",
+      "name": "Chave seccionadora tripolar",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -18,
+          0
+        ],
+        [
+          "circle",
+          -18,
+          0,
+          3,
+          false
+        ],
+        [
+          "line",
+          -18,
+          0,
+          19,
+          -23
+        ],
+        [
+          "circle",
+          24,
+          0,
+          3,
+          false
+        ],
+        [
+          "line",
+          24,
+          0,
+          42,
+          0
+        ],
+        [
+          "text",
+          0,
+          30,
+          "3P",
+          17
+        ]
+      ],
+      "tag": "CS 3P"
+    },
+    {
+      "id": "chave_oleo",
+      "name": "Chave a óleo",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -22,
+          0
+        ],
+        [
+          "rect",
+          -22,
+          -22,
+          44,
+          44,
+          false
+        ],
+        [
+          "line",
+          22,
+          0,
+          42,
+          0
+        ]
+      ],
+      "tag": "ÓLEO"
+    },
+    {
+      "id": "chave_carga",
+      "name": "Chave de abertura sob carga",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -18,
+          0
+        ],
+        [
+          "circle",
+          -18,
+          0,
+          3,
+          false
+        ],
+        [
+          "line",
+          -18,
+          0,
+          19,
+          -23
+        ],
+        [
+          "circle",
+          24,
+          0,
+          3,
+          false
+        ],
+        [
+          "line",
+          24,
+          0,
+          42,
+          0
+        ],
+        [
+          "rect",
+          -30,
+          -32,
+          60,
+          50,
+          false
+        ]
+      ],
+      "tag": "CARGA"
+    },
+    {
+      "id": "chave_normal_aberta",
+      "name": "Chave normalmente aberta",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -18,
+          0
+        ],
+        [
+          "circle",
+          -18,
+          0,
+          3,
+          false
+        ],
+        [
+          "line",
+          -18,
+          0,
+          19,
+          -23
+        ],
+        [
+          "circle",
+          24,
+          0,
+          3,
+          false
+        ],
+        [
+          "line",
+          24,
+          0,
+          42,
+          0
+        ]
+      ],
+      "tag": "NA"
+    },
+    {
+      "id": "chave_normal_fechada",
+      "name": "Chave normalmente fechada",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          42,
+          0
+        ],
+        [
+          "circle",
+          -18,
+          0,
+          4,
+          false
+        ],
+        [
+          "circle",
+          24,
+          0,
+          4,
+          false
+        ]
+      ],
+      "tag": "NF"
+    },
+    {
+      "id": "disjuntor",
+      "name": "Disjuntor",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -22,
+          0
+        ],
+        [
+          "rect",
+          -22,
+          -22,
+          44,
+          44,
+          false
+        ],
+        [
+          "line",
+          -15,
+          -15,
+          15,
+          15
+        ],
+        [
+          "line",
+          -15,
+          15,
+          15,
+          -15
+        ],
+        [
+          "line",
+          22,
+          0,
+          42,
+          0
+        ]
+      ],
+      "tag": "DJ"
+    },
+    {
+      "id": "para_raios",
+      "name": "Para-raios",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          0,
+          -40,
+          0,
+          -25
+        ],
+        [
+          "poly",
+          [
+            [
+              7,
+              -25
+            ],
+            [
+              -12,
+              -4
+            ],
+            [
+              9,
+              -4
+            ],
+            [
+              -8,
+              22
+            ]
+          ],
+          false
+        ],
+        [
+          "line",
+          -22,
+          28,
+          22,
+          28
+        ],
+        [
+          "line",
+          -13,
+          35,
+          13,
+          35
+        ],
+        [
+          "line",
+          -5,
+          42,
+          5,
+          42
+        ]
+      ],
+      "tag": "PR"
+    },
+    {
+      "id": "indicador_falta",
+      "name": "Indicador de falta",
+      "group": "Proteção e manobra",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -24,
+          0
+        ],
+        [
+          "circle",
+          0,
+          0,
+          24,
+          false
+        ],
+        [
+          "line",
+          24,
+          0,
+          42,
+          0
+        ],
+        [
+          "text",
+          0,
+          7,
+          "IF",
+          19
+        ]
+      ],
+      "tag": "IF"
+    },
+    {
+      "id": "rede_mt",
+      "name": "Rede primária / MT",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          45,
+          0
+        ]
+      ],
+      "tag": "PRIMÁRIA",
+      "line": true,
+      "color": "#c12a2a"
+    },
+    {
+      "id": "rede_bt",
+      "name": "Rede secundária / BT",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          45,
+          0
+        ]
+      ],
+      "tag": "SECUNDÁRIA",
+      "line": true,
+      "color": "#175aab"
+    },
+    {
+      "id": "rede_mista",
+      "name": "Rede primária e secundária",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          -10,
+          45,
+          -10
+        ],
+        [
+          "line",
+          -45,
+          2,
+          45,
+          2
+        ]
+      ],
+      "tag": "PRIMÁRIA E SECUNDÁRIA",
+      "line": true,
+      "color": "#714390"
+    },
+    {
+      "id": "rede_compacta",
+      "name": "Rede compacta",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          -10,
+          45,
+          -10
+        ],
+        [
+          "line",
+          -45,
+          2,
+          45,
+          2
+        ]
+      ],
+      "tag": "COMPACTA",
+      "line": true,
+      "color": "#c12a2a"
+    },
+    {
+      "id": "rede_multiplexada",
+      "name": "Rede multiplexada",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          -12,
+          45,
+          -12
+        ],
+        [
+          "line",
+          -45,
+          0,
+          45,
+          0
+        ],
+        [
+          "line",
+          -45,
+          12,
+          45,
+          12
+        ]
+      ],
+      "tag": "MULTIPLEXADA",
+      "line": true,
+      "color": "#175aab"
+    },
+    {
+      "id": "ramal_ligacao",
+      "name": "Ramal de ligação",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          45,
+          0
+        ]
+      ],
+      "tag": "RAMAL DE LIGAÇÃO",
+      "line": true,
+      "color": "#175aab"
+    },
+    {
+      "id": "rede_subterranea",
+      "name": "Rede subterrânea",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          -6,
+          45,
+          -6
+        ],
+        [
+          "line",
+          -45,
+          6,
+          45,
+          6
+        ],
+        [
+          "text",
+          0,
+          32,
+          "SUB",
+          15
+        ]
+      ],
+      "tag": "SUB",
+      "line": true,
+      "color": "#175aab"
+    },
+    {
+      "id": "travessia",
+      "name": "Travessia de rede",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          45,
+          0
+        ],
+        [
+          "line",
+          -25,
+          -20,
+          -25,
+          20
+        ],
+        [
+          "line",
+          25,
+          -20,
+          25,
+          20
+        ]
+      ],
+      "tag": "TRAV"
+    },
+    {
+      "id": "derivacao",
+      "name": "Derivação / conexão",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          45,
+          0
+        ],
+        [
+          "line",
+          0,
+          0,
+          0,
+          40
+        ],
+        [
+          "circle",
+          0,
+          0,
+          6,
+          true
+        ]
+      ],
+      "tag": "DER"
+    },
+    {
+      "id": "emenda",
+      "name": "Emenda de condutor",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          45,
+          0
+        ],
+        [
+          "rect",
+          -18,
+          -7,
+          36,
+          14,
+          false
+        ]
+      ],
+      "tag": "EMENDA"
+    },
+    {
+      "id": "cruzamento_sem_conexao",
+      "name": "Cruzamento sem conexão",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          45,
+          0
+        ],
+        [
+          "line",
+          0,
+          -40,
+          0,
+          -12
+        ],
+        [
+          "arc",
+          0,
+          0,
+          12,
+          -90,
+          90
+        ],
+        [
+          "line",
+          0,
+          12,
+          0,
+          40
+        ]
+      ],
+      "tag": "SEM CONEXÃO"
+    },
+    {
+      "id": "fim_rede",
+      "name": "Fim de rede",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          20,
+          0
+        ],
+        [
+          "line",
+          20,
+          -25,
+          20,
+          25
+        ],
+        [
+          "line",
+          30,
+          -25,
+          30,
+          25
+        ]
+      ],
+      "tag": "FIM"
+    },
+    {
+      "id": "seccionamento_aereo",
+      "name": "Seccionamento aéreo",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -45,
+          0,
+          -12,
+          0
+        ],
+        [
+          "line",
+          -12,
+          -23,
+          -12,
+          23
+        ],
+        [
+          "line",
+          12,
+          -23,
+          12,
+          23
+        ],
+        [
+          "line",
+          12,
+          0,
+          45,
+          0
+        ]
+      ],
+      "tag": "SECC"
+    },
+    {
+      "id": "mufla",
+      "name": "Mufla / terminação de cabo",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -40,
+          0,
+          30,
+          0
+        ],
+        [
+          "poly",
+          [
+            [
+              12,
+              -15
+            ],
+            [
+              35,
+              0
+            ],
+            [
+              12,
+              15
+            ]
+          ],
+          true
+        ]
+      ],
+      "tag": "MUFLA"
+    },
+    {
+      "id": "fly_tap",
+      "name": "Fly tap",
+      "group": "Redes e conexões",
+      "ops": [
+        [
+          "line",
+          -40,
+          0,
+          40,
+          0
+        ],
+        [
+          "line",
+          -12,
+          -12,
+          12,
+          12
+        ],
+        [
+          "line",
+          -12,
+          12,
+          12,
+          -12
+        ]
+      ],
+      "tag": "FLY TAP"
+    },
+    {
+      "id": "aterramento",
+      "name": "Aterramento",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "line",
+          0,
+          -40,
+          0,
+          10
+        ],
+        [
+          "line",
+          -30,
+          10,
+          30,
+          10
+        ],
+        [
+          "line",
+          -20,
+          23,
+          20,
+          23
+        ],
+        [
+          "line",
+          -9,
+          36,
+          9,
+          36
+        ]
+      ],
+      "tag": "AT"
+    },
+    {
+      "id": "haste_terra",
+      "name": "Haste de aterramento",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "line",
+          0,
+          -38,
+          0,
+          38
+        ],
+        [
+          "line",
+          -16,
+          -15,
+          16,
+          -15
+        ],
+        [
+          "line",
+          -16,
+          -15,
+          -26,
+          0
+        ],
+        [
+          "line",
+          0,
+          -15,
+          -10,
+          0
+        ],
+        [
+          "line",
+          16,
+          -15,
+          6,
+          0
+        ]
+      ],
+      "tag": "HASTE"
+    },
+    {
+      "id": "malha_terra",
+      "name": "Malha de aterramento",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "rect",
+          -28,
+          -28,
+          56,
+          56,
+          false
+        ],
+        [
+          "line",
+          -28,
+          0,
+          28,
+          0
+        ],
+        [
+          "line",
+          0,
+          -28,
+          0,
+          28
+        ]
+      ],
+      "tag": "MALHA"
+    },
+    {
+      "id": "estai_ancora",
+      "name": "Estai de âncora",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "line",
+          -40,
+          0,
+          35,
+          0
+        ],
+        [
+          "line",
+          18,
+          -14,
+          35,
+          0
+        ],
+        [
+          "line",
+          18,
+          14,
+          35,
+          0
+        ]
+      ],
+      "tag": "EA",
+      "line": true
+    },
+    {
+      "id": "estai_poste_poste",
+      "name": "Estai de poste a poste",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "circle",
+          -32,
+          0,
+          10,
+          false
+        ],
+        [
+          "circle",
+          32,
+          0,
+          10,
+          false
+        ],
+        [
+          "line",
+          -22,
+          0,
+          22,
+          0
+        ]
+      ],
+      "tag": "EPP",
+      "line": true
+    },
+    {
+      "id": "estai_cruzeta_poste",
+      "name": "Estai de cruzeta a poste",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "line",
+          -36,
+          -22,
+          -36,
+          22
+        ],
+        [
+          "line",
+          -36,
+          0,
+          30,
+          0
+        ],
+        [
+          "circle",
+          30,
+          0,
+          10,
+          false
+        ]
+      ],
+      "tag": "ECP",
+      "line": true
+    },
+    {
+      "id": "estai_cruzeta_cruzeta",
+      "name": "Estai de cruzeta a cruzeta",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "line",
+          -36,
+          -22,
+          -36,
+          22
+        ],
+        [
+          "line",
+          36,
+          -22,
+          36,
+          22
+        ],
+        [
+          "line",
+          -36,
+          0,
+          36,
+          0
+        ]
+      ],
+      "tag": "ECC",
+      "line": true
+    },
+    {
+      "id": "estai_contra_poste",
+      "name": "Estai com contra poste",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "circle",
+          -32,
+          0,
+          12,
+          false
+        ],
+        [
+          "circle",
+          32,
+          0,
+          12,
+          false
+        ],
+        [
+          "line",
+          -20,
+          0,
+          20,
+          0
+        ],
+        [
+          "text",
+          0,
+          -25,
+          "7m",
+          14
+        ]
+      ],
+      "tag": "E / CP"
+    },
+    {
+      "id": "estai_subsolo",
+      "name": "Estai de subsolo",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "rect",
+          -15,
+          -30,
+          30,
+          60,
+          true
+        ]
+      ],
+      "tag": "ES"
+    },
+    {
+      "id": "base_concretada",
+      "name": "Base concretada",
+      "group": "Estais e aterramento",
+      "ops": [
+        [
+          "circle",
+          0,
+          0,
+          30,
+          false
+        ],
+        [
+          "circle",
+          0,
+          0,
+          19,
+          true
+        ]
+      ],
+      "tag": "BCON"
+    },
+    {
+      "id": "luminaria",
+      "name": "Luminária",
+      "group": "Iluminação",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -20,
+          0
+        ],
+        [
+          "circle",
+          0,
+          0,
+          20,
+          false
+        ],
+        [
+          "line",
+          -14,
+          -14,
+          14,
+          14
+        ],
+        [
+          "line",
+          -14,
+          14,
+          14,
+          -14
+        ]
+      ],
+      "tag": "IP"
+    },
+    {
+      "id": "luminaria_led",
+      "name": "Luminária LED",
+      "group": "Iluminação",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -20,
+          0
+        ],
+        [
+          "rect",
+          -20,
+          -14,
+          50,
+          28,
+          false
+        ],
+        [
+          "line",
+          -10,
+          23,
+          -16,
+          32
+        ],
+        [
+          "line",
+          5,
+          23,
+          5,
+          35
+        ],
+        [
+          "line",
+          20,
+          23,
+          26,
+          32
+        ]
+      ],
+      "tag": "LED"
+    },
+    {
+      "id": "rele_fotoeletrico",
+      "name": "Relé fotoelétrico",
+      "group": "Iluminação",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -22,
+          0
+        ],
+        [
+          "circle",
+          0,
+          0,
+          22,
+          false
+        ],
+        [
+          "line",
+          -15,
+          -15,
+          15,
+          15
+        ],
+        [
+          "line",
+          -15,
+          15,
+          15,
+          -15
+        ]
+      ],
+      "tag": "RF"
+    },
+    {
+      "id": "comando_magnetico",
+      "name": "Comando magnético de iluminação",
+      "group": "Iluminação",
+      "ops": [
+        [
+          "line",
+          -42,
+          0,
+          -20,
+          0
+        ],
+        [
+          "rect",
+          -20,
+          -20,
+          40,
+          40,
+          "projetado"
+        ],
+        [
+          "text",
+          32,
+          7,
+          "S",
+          18
+        ]
+      ],
+      "tag": "CM"
+    },
+    {
+      "id": "uso_mutuo",
+      "name": "Uso mútuo",
+      "group": "Identificação",
+      "ops": [
+        [
+          "text",
+          0,
+          8,
+          "UT",
+          26
+        ]
+      ],
+      "tag": ""
+    },
+    {
+      "id": "uso_mutuo_terceiros",
+      "name": "Uso mútuo em poste de terceiros",
+      "group": "Identificação",
+      "ops": [
+        [
+          "text",
+          0,
+          8,
+          "TU",
+          26
+        ]
+      ],
+      "tag": ""
+    },
+    {
+      "id": "espacamento_duplo",
+      "name": "Espaçamento duplo",
+      "group": "Identificação",
+      "ops": [
+        [
+          "text",
+          0,
+          8,
+          "ED",
+          26
+        ]
+      ],
+      "tag": ""
+    },
+    {
+      "id": "ponto_rede",
+      "name": "Ponto de rede",
+      "group": "Identificação",
+      "ops": [
+        [
+          "circle",
+          0,
+          0,
+          24,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "P",
+          22
+        ]
+      ],
+      "tag": "PONTO"
+    },
+    {
+      "id": "norte",
+      "name": "Indicação do norte",
+      "group": "Identificação",
+      "ops": [
+        [
+          "line",
+          0,
+          35,
+          0,
+          -25
+        ],
+        [
+          "poly",
+          [
+            [
+              -10,
+              -10
+            ],
+            [
+              0,
+              -30
+            ],
+            [
+              10,
+              -10
+            ]
+          ],
+          true
+        ],
+        [
+          "text",
+          0,
+          -35,
+          "N",
+          14
+        ]
+      ],
+      "tag": ""
+    },
+    {
+      "id": "subestacao",
+      "name": "Subestação",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "rect",
+          -36,
+          -28,
+          72,
+          56,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "SE",
+          24
+        ]
+      ],
+      "tag": "SE"
+    },
+    {
+      "id": "medicao",
+      "name": "Conjunto de medição",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "rect",
+          -28,
+          -28,
+          56,
+          56,
+          false
+        ],
+        [
+          "circle",
+          0,
+          0,
+          18,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M",
+          20
+        ]
+      ],
+      "tag": "MED"
+    },
+    {
+      "id": "geracao_distribuida",
+      "name": "Geração distribuída",
+      "group": "Equipamentos",
+      "ops": [
+        [
+          "circle",
+          0,
+          0,
+          30,
+          false
+        ],
+        [
+          "text",
+          0,
+          8,
+          "G",
+          24
+        ],
+        [
+          "line",
+          30,
+          0,
+          45,
+          0
+        ]
+      ],
+      "tag": "GD"
+    },
+    {
+      "id": "estrutura_0",
+      "name": "Estrutura B1",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "B1",
+          22
+        ]
+      ],
+      "tag": "B1"
+    },
+    {
+      "id": "estrutura_1",
+      "name": "Estrutura B1Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "B1Q",
+          22
+        ]
+      ],
+      "tag": "B1Q"
+    },
+    {
+      "id": "estrutura_2",
+      "name": "Estrutura B2",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "B2",
+          22
+        ]
+      ],
+      "tag": "B2"
+    },
+    {
+      "id": "estrutura_3",
+      "name": "Estrutura B2Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "B2Q",
+          22
+        ]
+      ],
+      "tag": "B2Q"
+    },
+    {
+      "id": "estrutura_4",
+      "name": "Estrutura B3",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "B3",
+          22
+        ]
+      ],
+      "tag": "B3"
+    },
+    {
+      "id": "estrutura_5",
+      "name": "Estrutura B3Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "B3Q",
+          22
+        ]
+      ],
+      "tag": "B3Q"
+    },
+    {
+      "id": "estrutura_6",
+      "name": "Estrutura B4",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "B4",
+          22
+        ]
+      ],
+      "tag": "B4"
+    },
+    {
+      "id": "estrutura_7",
+      "name": "Estrutura B4Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "B4Q",
+          22
+        ]
+      ],
+      "tag": "B4Q"
+    },
+    {
+      "id": "estrutura_8",
+      "name": "Estrutura CE1",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE1",
+          22
+        ]
+      ],
+      "tag": "CE1"
+    },
+    {
+      "id": "estrutura_9",
+      "name": "Estrutura CE1A",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE1A",
+          22
+        ]
+      ],
+      "tag": "CE1A"
+    },
+    {
+      "id": "estrutura_10",
+      "name": "Estrutura CE1AQ",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE1AQ",
+          22
+        ]
+      ],
+      "tag": "CE1AQ"
+    },
+    {
+      "id": "estrutura_11",
+      "name": "Estrutura CE1Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE1Q",
+          22
+        ]
+      ],
+      "tag": "CE1Q"
+    },
+    {
+      "id": "estrutura_12",
+      "name": "Estrutura CE2",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE2",
+          22
+        ]
+      ],
+      "tag": "CE2"
+    },
+    {
+      "id": "estrutura_13",
+      "name": "Estrutura CE2Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE2Q",
+          22
+        ]
+      ],
+      "tag": "CE2Q"
+    },
+    {
+      "id": "estrutura_14",
+      "name": "Estrutura CE3",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE3",
+          22
+        ]
+      ],
+      "tag": "CE3"
+    },
+    {
+      "id": "estrutura_15",
+      "name": "Estrutura CE3Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE3Q",
+          22
+        ]
+      ],
+      "tag": "CE3Q"
+    },
+    {
+      "id": "estrutura_16",
+      "name": "Estrutura CE4",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE4",
+          22
+        ]
+      ],
+      "tag": "CE4"
+    },
+    {
+      "id": "estrutura_17",
+      "name": "Estrutura CE4Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "CE4Q",
+          22
+        ]
+      ],
+      "tag": "CE4Q"
+    },
+    {
+      "id": "estrutura_18",
+      "name": "Estrutura M1",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M1",
+          22
+        ]
+      ],
+      "tag": "M1"
+    },
+    {
+      "id": "estrutura_19",
+      "name": "Estrutura M1Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M1Q",
+          22
+        ]
+      ],
+      "tag": "M1Q"
+    },
+    {
+      "id": "estrutura_20",
+      "name": "Estrutura M2",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M2",
+          22
+        ]
+      ],
+      "tag": "M2"
+    },
+    {
+      "id": "estrutura_21",
+      "name": "Estrutura M2Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M2Q",
+          22
+        ]
+      ],
+      "tag": "M2Q"
+    },
+    {
+      "id": "estrutura_22",
+      "name": "Estrutura M3",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M3",
+          22
+        ]
+      ],
+      "tag": "M3"
+    },
+    {
+      "id": "estrutura_23",
+      "name": "Estrutura M3Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M3Q",
+          22
+        ]
+      ],
+      "tag": "M3Q"
+    },
+    {
+      "id": "estrutura_24",
+      "name": "Estrutura M4",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M4",
+          22
+        ]
+      ],
+      "tag": "M4"
+    },
+    {
+      "id": "estrutura_25",
+      "name": "Estrutura M4Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "M4Q",
+          22
+        ]
+      ],
+      "tag": "M4Q"
+    },
+    {
+      "id": "estrutura_26",
+      "name": "Estrutura N1",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "N1",
+          22
+        ]
+      ],
+      "tag": "N1"
+    },
+    {
+      "id": "estrutura_27",
+      "name": "Estrutura N1Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "N1Q",
+          22
+        ]
+      ],
+      "tag": "N1Q"
+    },
+    {
+      "id": "estrutura_28",
+      "name": "Estrutura N2",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "N2",
+          22
+        ]
+      ],
+      "tag": "N2"
+    },
+    {
+      "id": "estrutura_29",
+      "name": "Estrutura N2Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "N2Q",
+          22
+        ]
+      ],
+      "tag": "N2Q"
+    },
+    {
+      "id": "estrutura_30",
+      "name": "Estrutura N3",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "N3",
+          22
+        ]
+      ],
+      "tag": "N3"
+    },
+    {
+      "id": "estrutura_31",
+      "name": "Estrutura N3Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "N3Q",
+          22
+        ]
+      ],
+      "tag": "N3Q"
+    },
+    {
+      "id": "estrutura_32",
+      "name": "Estrutura N4",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "N4",
+          22
+        ]
+      ],
+      "tag": "N4"
+    },
+    {
+      "id": "estrutura_33",
+      "name": "Estrutura N4Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "N4Q",
+          22
+        ]
+      ],
+      "tag": "N4Q"
+    },
+    {
+      "id": "estrutura_34",
+      "name": "Estrutura S1",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "S1",
+          22
+        ]
+      ],
+      "tag": "S1"
+    },
+    {
+      "id": "estrutura_35",
+      "name": "Estrutura S1+S2 (ESTRIBO)",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "S1+S2 (ESTRIBO)",
+          7.333333333333333
+        ]
+      ],
+      "tag": "S1+S2 (ESTRIBO)"
+    },
+    {
+      "id": "estrutura_36",
+      "name": "Estrutura S2",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "S2",
+          22
+        ]
+      ],
+      "tag": "S2"
+    },
+    {
+      "id": "estrutura_37",
+      "name": "Estrutura T1",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "T1",
+          22
+        ]
+      ],
+      "tag": "T1"
+    },
+    {
+      "id": "estrutura_38",
+      "name": "Estrutura T1Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "T1Q",
+          22
+        ]
+      ],
+      "tag": "T1Q"
+    },
+    {
+      "id": "estrutura_39",
+      "name": "Estrutura T2",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "T2",
+          22
+        ]
+      ],
+      "tag": "T2"
+    },
+    {
+      "id": "estrutura_40",
+      "name": "Estrutura T2Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "T2Q",
+          22
+        ]
+      ],
+      "tag": "T2Q"
+    },
+    {
+      "id": "estrutura_41",
+      "name": "Estrutura T4",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "T4",
+          22
+        ]
+      ],
+      "tag": "T4"
+    },
+    {
+      "id": "estrutura_42",
+      "name": "Estrutura T4Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "T4Q",
+          22
+        ]
+      ],
+      "tag": "T4Q"
+    },
+    {
+      "id": "estrutura_43",
+      "name": "Estrutura U1",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "U1",
+          22
+        ]
+      ],
+      "tag": "U1"
+    },
+    {
+      "id": "estrutura_44",
+      "name": "Estrutura U1Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "U1Q",
+          22
+        ]
+      ],
+      "tag": "U1Q"
+    },
+    {
+      "id": "estrutura_45",
+      "name": "Estrutura U2",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "U2",
+          22
+        ]
+      ],
+      "tag": "U2"
+    },
+    {
+      "id": "estrutura_46",
+      "name": "Estrutura U2Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "U2Q",
+          22
+        ]
+      ],
+      "tag": "U2Q"
+    },
+    {
+      "id": "estrutura_47",
+      "name": "Estrutura U3",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "U3",
+          22
+        ]
+      ],
+      "tag": "U3"
+    },
+    {
+      "id": "estrutura_48",
+      "name": "Estrutura U3Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "U3Q",
+          22
+        ]
+      ],
+      "tag": "U3Q"
+    },
+    {
+      "id": "estrutura_49",
+      "name": "Estrutura U4",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "U4",
+          22
+        ]
+      ],
+      "tag": "U4"
+    },
+    {
+      "id": "estrutura_50",
+      "name": "Estrutura U4Q",
+      "group": "Identificação de estruturas",
+      "ops": [
+        [
+          "rect",
+          -43,
+          -20,
+          86,
+          40,
+          false
+        ],
+        [
+          "text",
+          0,
+          7,
+          "U4Q",
+          22
+        ]
+      ],
+      "tag": "U4Q"
+    }
+  ]
+}

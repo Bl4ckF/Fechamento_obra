@@ -1,0 +1,1 @@
+window.__QFIELD_TILE__&&window.__QFIELD_TILE__("-2719_-1030",{"td":[],"rd":[],"postes":[[-54.360026,-20.580917,""]]});

@@ -1,0 +1,5 @@
+Engelmig v6: operationsFilter recebe (index, operatorList), conforme a API atual do PDF.js.
+Na build 5.6.205, CanvasGraphics.executeOperatorList chamava o filtro apenas com o indice.
+Alteracao unica: r(o) -> r(o,t). A lista usada e a da propria renderizacao.
+Evita associar indices de getOperatorList a uma renderizacao distinta.
+Referencia: https://mozilla.github.io/pdf.js/api/draft/module-pdfjsLib.html#~OperationsFilter
