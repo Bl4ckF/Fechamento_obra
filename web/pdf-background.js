@@ -10,7 +10,7 @@
  async function lib(){if(!library){library=await import('/vendor/pdfjs/pdf.min.mjs');library.GlobalWorkerOptions.workerSrc='/vendor/pdfjs/pdf.worker.min.mjs';}return library;}
  const controls=['pdfPage','pdfPrevious','pdfNext','pdfRotate','pdfScope','pdfRange'];
  function lock(value){importing=value;for(const name of controls)node(name).disabled=value;node('pdfBackgroundUse').disabled=value||!prepared;}
- async function cleanup(){sequence++;session++;prepared=null;renderTask?.cancel();renderTask=null;passwordCallback=null;node('pdfPassword').value='';if(loading){const task=loading;loading=null;await task.destroy();}documentPDF=null;importing=false;}
+ async function cleanup(){sequence++;session++;const page=prepared;prepared=null;renderTask?.cancel();renderTask=null;passwordCallback=null;node('pdfPassword').value='';if(loading){const task=loading;loading=null;await task.destroy();}if(page?.cleanCanvas)page.cleanCanvas.width=page.cleanCanvas.height=1;const canvas=node('pdfPageCanvas');canvas.width=canvas.height=1;documentPDF=null;importing=false;}
  async function finish(value){const done=result;result=null;dialog.close();await cleanup();done?.(value);}
  async function renderPage(number=Number(node('pdfPage').value),batch=false){
   if(!documentPDF)return false;
@@ -60,7 +60,7 @@
     if(ticket!==session)return;node('pdfBackgroundStatus').textContent='Salvando página '+numbers[i]+' ('+(i+1)+' de '+numbers.length+')…';
     const item=prepared,canvas=node('pdfPageCanvas');
     const saved=await acceptPage({data:window.CroquiQuality.pngData(canvas),cleanData:item.cleanCanvas?window.CroquiQuality.pngData(item.cleanCanvas):null,texts:item.texts,lines:item.lines,name:filename+' — página '+numbers[i],source:item.source});
-    if(ticket!==session)return;pages.push(saved);prepared=null;
+    if(ticket!==session)return;pages.push(saved);if(item.cleanCanvas)item.cleanCanvas.width=item.cleanCanvas.height=1;prepared=null;
    }
    await finish({pages});
   }catch(error){if(ticket===session){const message=error.message;lock(false);if(!prepared)await renderPage();if(ticket===session)node('pdfBackgroundStatus').textContent=message;}}

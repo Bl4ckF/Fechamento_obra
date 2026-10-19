@@ -3,7 +3,7 @@
  const clone=x=>JSON.parse(JSON.stringify(x)),blank=()=>({version:1,width:1200,height:800,objects:[],background_ref:null});
  class DrawingModel{
   constructor(doc){this.doc=clone(doc||blank());this.undoStack=[];this.redoStack=[];}
-  commit(next){const {pdf_texts,pdf_lines,...rest}=next,copy=clone(rest);for(const [key,value] of [['pdf_texts',pdf_texts],['pdf_lines',pdf_lines]])if(value)copy[key]=value===this.doc[key]?value:clone(value);this.undoStack.push(this.doc);if(this.undoStack.length>60)this.undoStack.shift();this.redoStack=[];this.doc=copy;}
+  commit(next){const {pdf_texts,pdf_lines,objects=[],...rest}=next,copy=clone(rest),previous=new Set(this.doc.objects);copy.objects=objects.map(o=>previous.has(o)?o:clone(o));for(const [key,value] of [['pdf_texts',pdf_texts],['pdf_lines',pdf_lines]])if(value)copy[key]=value===this.doc[key]?value:clone(value);this.undoStack.push(this.doc);if(this.undoStack.length>60)this.undoStack.shift();this.redoStack=[];this.doc=copy;}
   undo(){if(!this.undoStack.length)return false;this.redoStack.push(this.doc);this.doc=this.undoStack.pop();return true;}
   redo(){if(!this.redoStack.length)return false;this.undoStack.push(this.doc);this.doc=this.redoStack.pop();return true;}
  }
@@ -140,7 +140,7 @@
   const source=(doc.pdf_lines||[]).find(o=>o.id===id);if(!source)return null;
   if(doc.objects.length>=1000)throw Error('Limite de 1.000 alterações atingido.');o=window.PDFLines.editable(source);doc.objects.push(o);return o;
  }
- function selectLine(id){finishEditing();selected=id;cancelInsertion();syncControls();draw();}
+ function selectLine(id){finishEditing();selected=id;cancelInsertion();syncControls();requestDraw();}
  function syncLineControls(doc=model.doc){const o=selectedLine(doc);el('lineControls').hidden=!o;if(!o)return;
   el('lineSelected').textContent=o.id.startsWith('pdfline_')?'Linha do PDF':'Linha adicionada';
   for(const [field,key] of [['lColor','color'],['lWidth','width'],['lDash','dash'],['lArrow','arrow'],['lLabel','label'],['lX1','x1'],['lY1','y1'],['lX2','x2'],['lY2','y2']])if(document.activeElement!==el(field))el(field).value=o[key]??'';
@@ -252,7 +252,7 @@
   for(const [key,field] of [['bold','dBold'],['italic','dItalic']]){el(field).disabled=!o;el(field).checked=!!o?.[key];}el('textControls').hidden=!o;syncSymbolControls();syncLineControls();
  }
  function finishEditing(){if(active){const node=textNodes.get(active);active='';node?.blur();requestDraw();}}
- function selectText(ident,focus=false){selected=ident;syncControls();draw();if(focus){const node=textNodes.get(ident);node?.focus();node?.scrollIntoView({block:'nearest',inline:'nearest'});}}
+ function selectText(ident,focus=false){selected=ident;syncControls();requestDraw();if(focus){const node=textNodes.get(ident);node?.focus();node?.scrollIntoView({block:'nearest',inline:'nearest'});}}
  function readInline(node){return (node.innerText??node.textContent??'').replace(/\r\n?/g,'\n').slice(0,2000);}
  function editInline(ident,node){
   const source=sourceList().find(t=>t.id===ident);if(!source)return;
@@ -272,8 +272,8 @@
   for(const source of (fast?sources.filter(t=>t.id===selected):sources)){
    const o=modifiedTexts.get(source.id)||editableText(source);let node=textNodes.get(source.id);
    if(!node){node=document.createElement('span');node.className='pdf-text-run';node.dataset.textId=source.id;node.contentEditable='plaintext-only';node.spellcheck=false;node.tabIndex=0;node.setAttribute('role','textbox');node.setAttribute('aria-multiline','true');node.setAttribute('aria-label','Editar texto do PDF: '+source.text.slice(0,100));
-    node.onfocus=()=>{active=selected=source.id;cancelInsertion();updateModes();syncControls();draw();};
-    node.onblur=()=>{if(active===source.id)active='';draw();};
+    node.onfocus=()=>{active=selected=source.id;cancelInsertion();updateModes();syncControls();requestDraw();};
+    node.onblur=()=>{if(active===source.id)active='';requestDraw();};
     node.oninput=()=>editInline(source.id,node);node.onpaste=event=>pastePlain(event,node);
     node.onkeydown=event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='z'){event.preventDefault();history(event.shiftKey?'redo':'undo');}else if(event.key==='Escape'||((event.ctrlKey||event.metaKey)&&event.key==='Enter')){event.preventDefault();if(event.key==='Escape')deselect();else finishEditing();}};
     layer.appendChild(node);textNodes.set(source.id,node);
@@ -366,7 +366,7 @@
    draw();resize();
   }).catch(error=>{if(backgroundRef===key){backgroundError=error;callbacks?.onBackgroundStatus?.({loading:false,error:error.message});if(el('drawingStatus'))el('drawingStatus').textContent=error.message;}});
  }
- function changed(){dirty=true;revision++;activity();loadedKey='';loadedDoc={...model.doc,objects:clone(model.doc.objects)};updateBackground();callbacks?.onChange(loadedDoc);refreshSearch();draw();el('drawingStatus').textContent='Salvando alterações do croqui…';scheduleImage();}
+ function changed(){dirty=true;revision++;activity();loadedKey='';loadedDoc={...model.doc};updateBackground();callbacks?.onChange(loadedDoc);refreshSearch();requestDraw();el('drawingStatus').textContent='Salvando alterações do croqui…';scheduleImage();}
  function scheduleImage(){clearTimeout(timer);timer=setTimeout(autoFlush,IMAGE_IDLE_MS);}
  function busy(){return interacting()||pan||navigating||Date.now()-lastActivity<IMAGE_IDLE_MS;}
  function autoFlush(){if(!dirty)return;if(busy()){scheduleImage();return;}flush({automatic:true}).catch(error=>{el('drawingStatus').textContent='Edição guardada; imagem do croqui pendente: '+error.message;});}
@@ -377,12 +377,13 @@
   inFlight=(async()=>{let waiting;do{waiting=backgroundPromise;await waiting;}while(waiting!==backgroundPromise);if(!dirty||(automatic&&busy()))return;if(backgroundError){if(allowMissing)return;throw backgroundError;}
    const snapshot=model.doc,serial=revision,published=loadedDoc,signature=JSON.stringify(snapshot);if(signature===lastRendered){dirty=false;callbacks?.onUnchanged?.(published);el('drawingStatus').textContent='Alterações salvas automaticamente.';return;}
    const edited=new Set(snapshot.objects.map(o=>o.pdf_line_id).filter(Boolean)),excluded=(snapshot.pdf_lines||[]).filter(o=>edited.has(o.id)).map(o=>o.operator_index);
-   const pictures=excluded.length?await window.PDFSource.render(snapshot.pdf_source_ref,snapshot.background_source,excluded,(snapshot.pdf_texts||[]).length>0):{original:background,clean:textBackground};
-   if(automatic&&(revision!==serial||busy()))return;
-   if(excluded.length&&revision===serial){background=pictures.original;textBackground=pictures.clean;requestDraw();}
-   const data=await window.CroquiRender.png(snapshot,pictures);
-   if(automatic&&(revision!==serial||busy()))return;
-   await callbacks.onImage(data,signature,published);if(revision===serial){lastRendered=signature;dirty=false;el('drawingStatus').textContent='Alterações salvas automaticamente.';}
+   const pdf=window.PDFSource,pictures=excluded.length?await (pdf.forExport||pdf.render)(snapshot.pdf_source_ref,snapshot.background_source,excluded,(snapshot.pdf_texts||[]).length>0):{original:background,clean:textBackground};
+   try{
+    if(automatic&&(revision!==serial||busy()))return;
+    const data=await window.CroquiRender.png(snapshot,pictures);
+    if(automatic&&(revision!==serial||busy()))return;
+    await callbacks.onImage(data,signature,published);if(revision===serial){lastRendered=signature;dirty=false;el('drawingStatus').textContent='Alterações salvas automaticamente.';}
+   }finally{if(excluded.length)pdf.release?.(pictures);}
   })().finally(()=>{inFlight=null;});await inFlight;if(allowMissing&&backgroundError)return;if(dirty){if(automatic)scheduleImage();else return flush();}
  }
  function load(doc,fallbackRef,needsImage=false){

@@ -52,7 +52,7 @@ class ReleaseUpdaterTests(unittest.TestCase):
     def test_repo_without_releases_updates_from_pinned_branch_commit(self):
         sha='a'*40
         version=base64.b64encode(b'{"version":"11.4.0"}').decode()
-        replies=[HTTPError('https://api.github.com/',404,'Not Found',{},None),{'default_branch':'main'},
+        replies=[HTTPError('https://api.github.com/',404,'Not Found',{},None),[],{'default_branch':'main'},
                  {'commit':{'sha':sha}},{'content':version}]
         with patch('updates.github_json',side_effect=replies) as request:
             result=updates.notice('/test',dict(self.settings,branch='main'),'11.3.0',force=True)
@@ -63,15 +63,32 @@ class ReleaseUpdaterTests(unittest.TestCase):
 
     def test_missing_branch_is_distinguished_from_missing_repository(self):
         missing=HTTPError('https://api.github.com/',404,'Not Found',{},None)
-        with patch('updates.github_json',side_effect=[missing,{'default_branch':'main'},missing]):
+        with patch('updates.github_json',side_effect=[missing,[],{'default_branch':'main'},missing]):
             result=updates.notice('/test',dict(self.settings,branch='nome-errado'),'11.3.0',force=True)
         self.assertFalse(result['available']);self.assertIn('Repositório encontrado',result['detail']);self.assertIn('branch',result['detail'])
 
     def test_missing_version_is_distinguished_from_missing_repository(self):
         missing=HTTPError('https://api.github.com/',404,'Not Found',{},None)
-        with patch('updates.github_json',side_effect=[missing,{'default_branch':'main'},{'commit':{'sha':'a'*40}},missing]):
+        with patch('updates.github_json',side_effect=[missing,[],{'default_branch':'main'},{'commit':{'sha':'a'*40}},missing]):
             result=updates.notice('/test',self.settings,'11.3.0',force=True)
         self.assertFalse(result['available']);self.assertIn('falta version.json',result['detail'])
+
+    def test_restarted_sequence_uses_published_tags_instead_of_old_branch_number(self):
+        missing=HTTPError('https://api.github.com/',404,'Not Found',{},None)
+        tags=[{'name':'v1.3.0','commit':{'sha':'a'*40}}]
+        with patch('updates.github_json',side_effect=[missing,tags]) as request:
+            result=updates.notice('/test',self.settings,'1.3.1',force=True)
+        self.assertFalse(result['available']);self.assertEqual(result['remote_version'],'1.3.0')
+        self.assertEqual(result['mode'],'tag');self.assertEqual(request.call_count,2)
+        self.assertNotIn('error',result)
+
+    def test_new_tag_in_current_sequence_is_available_and_pinned(self):
+        missing=HTTPError('https://api.github.com/',404,'Not Found',{},None)
+        tags=[{'name':'v1.3.0','commit':{'sha':'a'*40}},{'name':'v1.3.2','commit':{'sha':'b'*40}}]
+        with patch('updates.github_json',side_effect=[missing,tags]):
+            result=updates.notice('/test',self.settings,'1.3.1',force=True)
+        self.assertTrue(result['can_update']);self.assertEqual(result['remote_version'],'1.3.2')
+        self.assertTrue(result['download_url'].endswith('/zipball/'+'b'*40))
 
     def test_cache_distinguishes_configured_branch(self):
         release={'remote_version':'11.4.0','tag':'v11.4.0','download_url':'https://github.com/test.zip'}

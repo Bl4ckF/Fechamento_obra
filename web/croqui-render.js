@@ -17,16 +17,19 @@
   const {pdf_lines,...page}=doc;doc={...page,pdf_texts:(doc.pdf_texts||[]).filter(t=>editedText.has(t.id))};
   const size=window.CroquiQuality.exportSize(pictures.original);
   if(typeof Worker!=='undefined'&&typeof OffscreenCanvas!=='undefined'&&typeof createImageBitmap==='function'){
-   let original,clean;
+   let original,clean,consumed=false;
    try{
-    original=pictures.original?await createImageBitmap(pictures.original):null;clean=pictures.clean?await createImageBitmap(pictures.clean):null;
-    const id=++sequence,w=workerFor(),blob=await new Promise((resolve,reject)=>{pending.set(id,{resolve,reject});try{w.postMessage({id,doc,size,catalog:window.NetworkSymbols.all(),original,clean},[original,clean].filter(Boolean));}catch(error){pending.delete(id);reject(error);}});
+    const w=workerFor();
+    const bitmap=async picture=>{if(!picture)return null;if(picture.transferToImageBitmap){consumed=true;return picture.transferToImageBitmap();}return createImageBitmap(picture);};
+    original=await bitmap(pictures.original);clean=await bitmap(pictures.clean);
+    const id=++sequence,blob=await new Promise((resolve,reject)=>{pending.set(id,{resolve,reject});try{w.postMessage({id,doc,size,catalog:window.NetworkSymbols.all(),original,clean},[original,clean].filter(Boolean));}catch(error){pending.delete(id);reject(error);}});
     return await dataURL(blob);
-   }catch(error){original?.close();clean?.close();/* Navegadores sem suporte completo usam toBlob abaixo. */}
+   }catch(error){original?.close();clean?.close();if(consumed)throw error;/* Navegadores sem suporte completo usam toBlob abaixo. */}
   }
   const canvas=document.createElement('canvas');canvas.width=size.width;canvas.height=size.height;const context=canvas.getContext('2d');context.scale(size.width/1200,size.height/800);context.imageSmoothingQuality='high';window.Drawing.render(context,doc,'',false,pictures);
-  if(!canvas.toBlob)return window.CroquiQuality.pngData(canvas);
-  const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(Error('Não foi possível preparar a imagem do croqui.')),'image/png'));return dataURL(blob);
+  try{if(!canvas.toBlob)return window.CroquiQuality.pngData(canvas);
+   const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(Error('Não foi possível preparar a imagem do croqui.')),'image/png'));return await dataURL(blob);
+  }finally{canvas.width=canvas.height=1;}
  }
  window.CroquiRender={png};
 })();

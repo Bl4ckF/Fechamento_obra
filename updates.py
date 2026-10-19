@@ -115,6 +115,25 @@ def latest_release(settings):
             'release_url': str(payload.get('html_url', '')), 'asset_name': assets[0]['name'] if assets else ''}
 
 
+def latest_tag(settings):
+    """As tags publicadas identificam a sequência quando não há Releases."""
+    repo=repo_name(settings)
+    try:payload=github_json(API_REPO+repo+'/tags?per_page=100')
+    except HTTPError as exc:
+        if exc.code==404:return None
+        raise
+    if not isinstance(payload,list):raise ValueError('O GitHub retornou uma lista de tags inválida.')
+    candidates=[row for row in payload if isinstance(row,dict) and version_tuple(row.get('name',''))!=(0,0,0)]
+    if not candidates:return None
+    chosen=max(candidates,key=lambda row:version_tuple(row['name']))
+    tag=chosen['name'];sha=str(chosen.get('commit',{}).get('sha',''))
+    if not re.fullmatch(r'[a-f0-9]{40,64}',sha):raise ValueError('A tag publicada não informa um commit válido.')
+    return {'remote_version':tag.lstrip('v'),'tag':tag,'commit':sha,'mode':'tag','repository_found':True,
+            'download_url':API_REPO+repo+'/zipball/'+sha,
+            'release_url':'https://github.com/'+repo+'/tree/'+quote(tag,safe=''),'asset_name':'',
+            'info':'Repositório encontrado. Sem Release publicada; versão consultada na tag '+tag+'.'}
+
+
 def notice(root, settings, current, force=False):
     key = (str(root), str(settings.get('repository')), str(settings.get('branch')), str(current))
     with _notice_lock:
@@ -127,7 +146,7 @@ def notice(root, settings, current, force=False):
             latest = latest_release(settings)
         except HTTPError as exc:
             if exc.code != 404:raise
-            latest = branch_version(settings)
+            latest = latest_tag(settings) or branch_version(settings)
         available = version_tuple(latest['remote_version']) > version_tuple(current)
         result.update(latest, available=available, can_update=available, key=latest['tag'])
     except HTTPError as exc:
@@ -194,7 +213,7 @@ def valid_archive(archive, expected_version):
             if all(name in z.namelist() for name in required):
                 meta = json.loads(z.read(base + 'version.json').decode('utf-8'))
                 if version_tuple(meta.get('version')) != version_tuple(expected_version):
-                    raise ValueError('A versão do pacote não corresponde à tag da Release. Atualize version.json antes de publicar.')
+                    raise ValueError('A versão do pacote não corresponde à versão publicada. Alinhe app.py, version.json e a tag antes de publicar.')
                 return base
     raise ValueError('O ZIP não contém app.py, updates.py, INICIAR.bat e version.json na mesma pasta.')
 

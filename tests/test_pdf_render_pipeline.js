@@ -19,7 +19,13 @@ const source={kind:'pdf',page:1},renderer=env.window.PDFSource;
  const full=renderer.render('a.pdf',source,[21],true);await settle();const before=cancelled;
  const fresh=renderer.render('a.pdf',source,[22],false,true);await settle();assert.equal(cancelled,before,'New previews never cancel an explicit full export');
  renders.at(-1).finish();await settle();renders.at(-1).finish();const exported=await full;assert.equal(exported.original.width,6000);assert.equal(exported.original.height,4000);assert.equal(exported.clean.width,6000);
- await settle();renders.at(-1).finish();await fresh;
+ await settle();renders.at(-1).finish();const freshPreview=await fresh;
+ // Successive full exports release their pixels and never reuse a consumed canvas.
+ for(let cycle=0;cycle<4;cycle++){
+  const pending=renderer.forExport('a.pdf',source,[22],false);await settle();renders.at(-1).finish();const pictures=await pending;
+  assert.equal(pictures.original.width,6000);renderer.release(pictures);assert.equal(pictures.original.width,1);
+  assert.equal(freshPreview.original.width,1800,'Releasing a full export leaves the active preview intact');
+ }
  // O worker recebe somente as fontes usadas para apagar textos editados.
  let message,transfer;class Worker{postMessage(data,items){message=data;transfer=items;queueMicrotask(()=>this.onmessage({data:{id:data.id,blob:{size:10}}}));}}
  class FileReader{readAsDataURL(){this.result='data:image/png;base64,OK';this.onload();}}
@@ -29,5 +35,7 @@ const source={kind:'pdf',page:1},renderer=env.window.PDFSource;
  await compact.window.CroquiRender.png(doc,{original:{width:6000,height:4000},clean:{width:6000,height:4000}});
  assert.equal(message.doc.pdf_lines,undefined);assert.equal(message.doc.pdf_texts.length,1);assert.equal(message.doc.pdf_texts[0].id,'text_1');assert.equal(message.doc.objects[0].text,'Novo');assert.equal(message.size.width,6000);assert.equal(transfer.length,2);
  assert.equal(doc.pdf_texts.length,2);assert.equal(doc.pdf_lines.length,1,'Export leaves the editable sources intact');
+ let transfers=0;const movable=()=>({width:6000,height:4000,transferToImageBitmap(){transfers++;return {width:6000,height:4000,close(){}};}});
+ await compact.window.CroquiRender.png(doc,{original:movable(),clean:movable()});assert.equal(transfers,2,'Full-resolution pixels move to the worker without a second copy');assert.equal(message.size.width,6000);
  console.log('OK: fila descarta prévias antigas, protege exportação completa e transfere apenas as geometrias necessárias ao worker.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -130,7 +130,7 @@ const type=text=>{node().focus();node().textContent=text;node().oninput();};
  env.window.requestAnimationFrame=fn=>{frames.push(fn);return frames.length;};stressHit.onpointerdown(stressEvent(250,220));const paints=elements.get('drawingCanvas').context.paints;
  for(let i=1;i<=100;i++)stressHit.onpointermove(stressEvent(250+i,220+i/2));
  assert.equal(frames.length,1);assert.equal(elements.get('drawingCanvas').context.paints,paints);frames.shift()();assert.equal(elements.get('drawingCanvas').width,1800);
- stressHit.onpointerup(stressEvent(350,270));assert.equal(changed.objects[0].x1,300);assert.equal(elements.get('drawingCanvas').width,6000);assert.equal(stressLine.x1,200);
+ stressHit.onpointerup(stressEvent(350,270));assert.equal(changed.objects[0].x1,300);frames.shift()();assert.equal(elements.get('drawingCanvas').width,6000);assert.equal(stressLine.x1,200);
  delete env.window.requestAnimationFrame;
  // v10: transformar diretamente na página, cancelar seleção e preservar histórico.
  const raw={version:1,width:1200,height:800,background_ref:'a'.repeat(64)+'.png',background_source:{kind:'pdf',name:'Teste',page:1},pdf_text_background_ref:'b'.repeat(64)+'.png',pdf_texts:[source],objects:[]};

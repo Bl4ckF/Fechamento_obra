@@ -7,6 +7,11 @@ doc.objects.push({id:'line',type:'line',x1:10,y1:20,x2:200,y2:300,color:'#123456
 model.commit(doc);doc.objects[0].color='#ffffff';assert.equal(model.doc.objects[0].color,'#123456');
 assert.equal(model.undo(),true);assert.equal(model.doc.objects.length,0);assert.equal(model.redo(),true);assert.equal(model.doc.objects[0].dash,'dashed');
 assert.equal(model.doc.objects[0].arrow,'both');assert.equal(drawing.window.Drawing.bounds(model.doc.objects[0]).w,190);
+const unchanged=model.doc.objects[0];
+model.commit({...model.doc,objects:[unchanged,{id:'text',type:'text',text:'ANTES',x1:50,y1:60}]});const before=model.doc;
+const edited={...before.objects[1],text:'DEPOIS'};model.commit({...before,objects:[unchanged,edited]});edited.text='MUTACAO EXTERNA';
+assert.equal(model.doc.objects[0],unchanged,'Unchanged geometry is shared instead of recopied for each keystroke');assert.equal(model.doc.objects[1].text,'DEPOIS');assert.equal(before.objects[1].text,'ANTES');
+model.undo();assert.equal(model.doc.objects[1].text,'ANTES');model.redo();assert.equal(model.doc.objects[1].text,'DEPOIS');
 
 const elements=new Map();
 function element(id){if(!elements.has(id))elements.set(id,{value:'',textContent:'',hidden:false,disabled:false,innerHTML:'',classList:{toggle(){}},querySelector(selector){return element(id+' '+selector);},insertAdjacentHTML(){},addEventListener(){},click(){}});return elements.get(id);}
