@@ -1,7 +1,7 @@
 'use strict';
 (() => {
  let timer,periodic,checkTimer,inFlight=null,lastSignature='',ready=false,patterns=[],notification=null,workDrafts=[];
- const payload=()=>({...meta(),services:cp(S.services),selected:S.selected,editor:S.editor?cp(S.editor):null,editing:S.editing,editor_touched:S.editorTouched});
+ const payload=()=>({...meta(),services:cp(S.services),selected:S.selected,editor:S.editor?cp(S.editor):null,editing:S.editing,editor_touched:S.editorTouched,editor_baseline:S.editorBaseline||null});
  function status(message,error=false){const el=$('automaticStatus');if(el){el.textContent=message;el.classList.toggle('error',error);}}
  function schedule(){if(!ready)return;clearTimeout(timer);status('Salvando alterações automaticamente…');timer=setTimeout(()=>flush().catch(()=>{}),1000);}
  async function flush(force=false){
@@ -46,7 +46,7 @@
  async function drafts(){await flush();workDrafts=await api('/api/working-drafts');$('workingDrafts').innerHTML=workDrafts.map(d=>`<div class="revision-row"><div><strong>${esc(d.work_order||'Obra não informada')}</strong><p>${esc(d.responsible||'Responsável não informado')} · ${esc(new Date(d.updated_at).toLocaleString('pt-BR'))}</p><small>${(d.services||[]).length} serviço(s) · ${(d.book?.points||[]).length} ponto(s)</small></div><button class="secondary" data-resume-draft="${esc(d.id)}">Continuar</button></div>`).join('')||'<p class="empty-table">Os trabalhos aparecem aqui automaticamente durante a edição.</p>';}
  async function resumeDraft(id){
   await window.Drawing?.flush();await flush();const d=workDrafts.find(x=>x.id===id);if(!d)return;
-  S.draftId=d.draft_id;S.services=cp(d.services||[]);S.editor=d.editor?cp(d.editor):null;S.selected=d.selected;S.editing=d.editing??-1;S.editorTouched=!!d.editor_touched;S.lastSaved=null;S.patternOptions=[];S.patternSource='Rascunho automático recuperado';
+  S.draftId=d.draft_id;S.services=cp(d.services||[]);S.editor=d.editor?cp(d.editor):null;S.selected=d.selected;S.editing=d.editing??-1;S.editorTouched=!!d.editor_touched;S.editorBaseline=d.editor_baseline||null;S.lastSaved=null;S.patternOptions=[];S.patternSource='Rascunho automático recuperado';
   window.Book.load(d.book);for(const name of ['workOrder','date','responsible','location','notes'])$(name).value=d[name==='workOrder'?'work_order':name]||'';
   $('exports').hidden=true;renderServices();renderLabor();if(S.editor&&S.selected){prepareBaseControls();renderEditor();}else $('editor').innerHTML='<div class="empty"><h3>Rascunho recuperado</h3><p>Selecione um serviço para continuar.</p></div>';
   persist();showTab('work');await recalculate();status('Rascunho recuperado. Salvamento automático ativo.');
@@ -58,7 +58,7 @@
  async function usePattern(pattern){
   const entry=crypto.randomUUID(),point_id=window.Book?.activeId()||'';
   await selectLabor(pattern.editor.labor_id,{...cp(pattern.editor),entry_id:entry,point_id,quantity:'1',reviewed:false},-1,true);
-  S.patternSource=`Padrão observado em ${pattern.support} de ${pattern.uses} registros`;S.editorTouched=false;showTab('book');renderEditor();persist();
+  S.patternSource=`Padrão observado em ${pattern.support} de ${pattern.uses} registros`;S.editorTouched=false;if(S.editing<0)rememberEditorStart();showTab('book');renderEditor();persist();
  }
  function displayNotice(data){
   const banner=$('updateNotice');
@@ -88,7 +88,7 @@
   $('learningFiles').onchange=run(async ev=>{let imported=0;await flush();try{for(const file of ev.target.files){const result=await api('/api/learning/import',JSON.parse(await file.text()));imported+=result.imported_events??result.imported;}await refresh();toast(`${imported} registro(s) reunidos. Padrões atualizados.`);}finally{ev.target.value='';}});
   $('learnedPatterns').onclick=run(async ev=>{const el=ev.target.closest('[data-pattern-use]');if(el){const pattern=patterns.find(p=>p.id===el.dataset.patternUse);if(pattern)await usePattern(pattern);}});
   $('workingDrafts').onclick=run(async ev=>{const button=ev.target.closest('[data-resume-draft]');if(button)await resumeDraft(button.dataset.resumeDraft);});
-  $('editor').addEventListener('change',run(async ev=>{if(ev.target.id!=='learnedChoice'||!ev.target.value)return;const p=S.patternOptions.find(x=>x.id===ev.target.value);if(!p)return;await flush();const entry_id=S.editor.entry_id,point_id=S.editor.point_id,quantity=S.editor.quantity;S.editor={...cp(p.editor),entry_id,point_id,quantity,reviewed:false};S.editorTouched=false;S.patternSource=`Padrão observado em ${p.support} de ${p.uses} registros`;prepareBaseControls();renderEditor();persist();}));
+  $('editor').addEventListener('change',run(async ev=>{if(ev.target.id!=='learnedChoice'||!ev.target.value)return;const p=S.patternOptions.find(x=>x.id===ev.target.value);if(!p)return;await flush();const entry_id=S.editor.entry_id,point_id=S.editor.point_id,quantity=S.editor.quantity;S.editor={...cp(p.editor),entry_id,point_id,quantity,reviewed:false};S.editorTouched=false;S.patternSource=`Padrão observado em ${p.support} de ${p.uses} registros`;prepareBaseControls();if(S.editing<0)rememberEditorStart();renderEditor();persist();}));
   $('updateNotice').onclick=ev=>{if(ev.target.id==='notificationDismiss'){sessionStorage.setItem('engelmig-update-dismissed',String(notification.key||notification.remote_version||notification.remote));$('updateNotice').hidden=true;}if(ev.target.id==='notificationOpen'){showTab('settings');$('applyUpdate').disabled=!notification.can_update;$('updateResult').textContent='Versão '+notification.remote_version+' disponível. Clique em Instalar atualização para baixar, atualizar e reiniciar o sistema automaticamente.';}};
   window.addEventListener('online',()=>{flush(true).catch(()=>{});checkNotice();});
   window.addEventListener('pagehide',()=>{if(!ready||!S.token)return;const body=JSON.stringify(payload());try{localStorage.setItem(localKey,JSON.stringify({...payload(),updated_at:new Date().toISOString()}));if(new Blob([body]).size<60000)fetch('/api/draft',{method:'POST',headers:{'Content-Type':'application/json','X-App-Token':S.token},body,keepalive:true}).catch(()=>{});}catch{}});
