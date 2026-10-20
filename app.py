@@ -26,12 +26,14 @@ from drawing import symbol_catalog
 from symbols import clean_symbol
 import updates
 import learning
+import job_files
 from records_sync import RecordSync
 
 APP_ID='engelmig-fechamento-v1'
-VERSION='1.3.4'
+VERSION='1.3.5'
 LEARNING_LOCK=threading.RLock()
 TOKEN=secrets.token_urlsafe(32)
+INSTANCE_ID=uuid.uuid4().hex
 DATA_DIR=Path(os.environ.get('ENGELMIG_DATA_DIR',ROOT/'dados'))
 DB=DATA_DIR/'fechamento.sqlite3'
 SYNC=None
@@ -258,11 +260,32 @@ def save_job(payload):
         job['book']=book
         job['workflow']='concluido' if status=='fechado' and book['forms_submitted'] else 'aguardando_forms' if status=='fechado' else 'rascunho'
         job['forms_url']=settings()['forms_url']
+    if payload.get('source_job_id'):
+        source_id=str(payload['source_job_id'])
+        if any(j['id']==source_id for j in records('jobs')):job['source_job_id']=source_id
     save_record('jobs',job)
     with LEARNING_LOCK,connect() as db:
         learning.capture(db,{**job,'services':result['services']},'obra salva',record_id='job:'+job['id'])
         learning.write_named_exports(db,DATA_DIR)
+    try:
+        folder=ensure_job_folder(job)
+        job['folder']=str(folder)
+    except OSError as exc:
+        job['folder_error']='Registro salvo. Não foi possível criar a pasta: '+str(exc)
     return job
+
+def ensure_job_folder(job):
+    return job_files.ensure_files(job,DATA_DIR,ROOT/'web',book_html(job),materials_report_html(job),report_csv(job))
+
+def open_job_folder(data):
+    job=next((j for j in records('jobs') if j['id']==str(data.get('id',''))),None)
+    if not job:raise ValueError('Registro de obra não encontrado.')
+    section=data.get('section','root')
+    if section not in ('root','photos'):raise ValueError('Pasta do registro inválida.')
+    folder=ensure_job_folder(job)
+    if section=='photos':folder=folder/'fotos'
+    opened=job_files.open_folder(folder)
+    return {'opened':opened,'path':str(folder),'message':'Pasta aberta.' if opened else 'Pasta: '+str(folder)}
 
 def restore(payload):
     if payload.get('app')!=APP_ID or payload.get('schema') not in (1,2,3,4): raise ValueError('Arquivo de backup incompatível.')
@@ -369,7 +392,8 @@ class Handler(BaseHTTPRequestHandler):
         if not self.valid_host(): return self.send({'error':'Host inválido.'},403)
         path=urlparse(self.path); q=parse_qs(path.query)
         try:
-            if path.path=='/api/health': return self.send({'app':APP_ID,'version':VERSION})
+            if path.path=='/api/health': return self.send({'app':APP_ID,'version':VERSION,'instance_id':INSTANCE_ID})
+            if path.path=='/api/update-status':return self.send(updates.read_status(DATA_DIR))
             if path.path=='/api/bootstrap': return self.send({'catalog':CATALOG,'profiles':records('profiles'),'token':TOKEN,'bases':base_summaries(),'memories':records('memories'),'equipment_references':BASE_DATA['equipment_references'],'version':VERSION,'network_symbols':symbol_catalog(),'custom_symbols':records('custom_symbols'),'settings':settings(),'draft':next(iter(records('drafts')),None),'patterns':learning_bootstrap(),'cleared_draft_ids':cleared_draft_ids()})
             if path.path=='/api/learning/patterns':
                 with connect() as db:return self.send(learning.patterns(db))
@@ -432,6 +456,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send({'missing':[ref for ref in refs if ref not in present or (DATA_DIR/'media'/ref).stat().st_size<12]})
             if self.path=='/api/book-check':return self.send(normalize_book(data.get('book'),calculate(data.get('services',[]))['services'],available_media()))
             if self.path=='/api/book-preview':return self.send(preview_book(data))
+            if self.path=='/api/job-folder':return self.send(open_job_folder(data))
             if self.path=='/api/draft-clear':return self.send(clear_draft(data))
             if self.path=='/api/draft':
                 return self.send(automatic_draft(data))
@@ -452,7 +477,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/update-notice':return self.send(updates.notice(ROOT,settings(),VERSION,force=data.get('force') is True))
             if self.path=='/api/update-apply':
                 backup_database()
-                result=updates.apply(ROOT,settings(),VERSION)
+                result=updates.apply(ROOT,settings(),VERSION,port=self.server.server_port,data_dir=DATA_DIR)
                 if result.get('started'):
                     self.send(result)
                     import time
@@ -486,10 +511,10 @@ class Handler(BaseHTTPRequestHandler):
             import traceback; traceback.print_exc(); self.send({'error':'Não foi possível salvar. Verifique a pasta dados e a janela do programa.'},500)
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8766);parser.add_argument('--no-browser',action='store_true')
+    parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8766);parser.add_argument('--no-browser',action='store_true');parser.add_argument('--reuse-port',action='store_true')
     args=parser.parse_args();connect().close()
     server=None
-    for port in range(args.port,args.port+10):
+    for port in range(args.port,args.port+(1 if args.reuse_port else 10)):
         try: server=ThreadingHTTPServer(('127.0.0.1',port),Handler);break
         except OSError:
             from urllib.request import urlopen

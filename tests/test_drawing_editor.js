@@ -149,6 +149,16 @@ const type=text=>{node().focus();node().textContent=text;node().oninput();};
  type('REDE INSTALAÇÃO P17');elements.get('dPdfSearch').value='instalacao p17';elements.get('dPdfSearch').oninput();assert.equal(elements.get('pdfSearchResults').children.length,1);assert.equal(node().classes.has('search-match'),true);
  elements.get('dPdfSearch').value='PONTO ANTIGO';elements.get('dPdfSearch').oninput();assert.equal(elements.get('pdfSearchResults').children.length,0,'Old text must not match after editing');
  drawing.resetSearch();assert.equal(elements.get('pdfSearchPanel').hidden,true);
+ // Texto inserido em uma imagem é editável, pesquisável e reabre como objeto vetorial.
+ await drawing.setBackground('a'.repeat(64)+'.png',{kind:'image',name:'Imagem.png'});
+ elements.get('dNewText').onclick();stage.events.pointerdown(transformEvent(300,250,78));
+ const addedText=changed.objects.find(o=>o.type==='text'&&!o.pdf_text_id);assert.ok(addedText);assert.equal(addedText.text,'Novo texto');
+ elements.get('dTextContent').value='TEXTO NOVO PONTO 17';elements.get('dTextContent').oninput();await drawing.flush();assert.equal(changed.objects[0].text,'TEXTO NOVO PONTO 17');
+ elements.get('dRotation').value='45';elements.get('dRotation').onchange();assert.equal(changed.objects[0].rotation,45);
+ elements.get('dPdfSearch').value='novo ponto';elements.get('dPdfSearch').oninput();assert.equal(elements.get('pdfSearchResults').children.length,1);
+ const withText=JSON.parse(JSON.stringify(changed));drawing.load(null);drawing.load(withText);await Promise.resolve();await drawing.flush();
+ const addedNode=elements.get('pdfTextLayer').children.find(n=>n.dataset.textId===addedText.id);assert.ok(addedNode);addedNode.focus();elements.get('dDelete').onclick();assert.equal(changed.objects.length,0);
+ elements.get('dUndo').onclick();assert.equal(changed.objects[0].text,'TEXTO NOVO PONTO 17');drawing.load(raw);await Promise.resolve();await Promise.resolve();drawing.resetSearch();
  // Criação, salvamento com falha, inserção, edição e reabertura de simbologia pessoal.
  await elements.get('dSymbolEditor').onclick();assert.equal(elements.get('seName').value,'Nova simbologia');
  const seCanvas=elements.get('seCanvas');seCanvas.clientWidth=seCanvas.clientHeight=480;

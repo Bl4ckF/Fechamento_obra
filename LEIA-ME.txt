@@ -1,3 +1,12 @@
+VERSÃO 1.3.5 — ATUALIZAÇÕES, REGISTROS E CROQUI
+
+Leia ATUALIZAR.txt para instalar o pacote incremental e usar as novidades:
+sino animado e diálogo de atualização; reinício na mesma aba; exclusão de
+pontos; árvore de registros com pastas e fotos; reedição do book concluído;
+novo texto no croqui e melhorias no editor de simbologias.
+
+As instruções abaixo documentam também os recursos das versões anteriores.
+
 NOVIDADES DA VERSÃO 1.3.2 — MATERIAIS E ANEXOS
 
 Ao selecionar uma nova mão de obra:

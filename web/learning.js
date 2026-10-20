@@ -46,7 +46,7 @@
  async function drafts(){await flush();workDrafts=await api('/api/working-drafts');$('workingDrafts').innerHTML=workDrafts.map(d=>`<div class="revision-row"><div><strong>${esc(d.work_order||'Obra não informada')}</strong><p>${esc(d.responsible||'Responsável não informado')} · ${esc(new Date(d.updated_at).toLocaleString('pt-BR'))}</p><small>${(d.services||[]).length} serviço(s) · ${(d.book?.points||[]).length} ponto(s)</small></div><button class="secondary" data-resume-draft="${esc(d.id)}">Continuar</button></div>`).join('')||'<p class="empty-table">Os trabalhos aparecem aqui automaticamente durante a edição.</p>';}
  async function resumeDraft(id){
   await window.Drawing?.flush();await flush();const d=workDrafts.find(x=>x.id===id);if(!d)return;
-  S.draftId=d.draft_id;S.services=cp(d.services||[]);S.editor=d.editor?cp(d.editor):null;S.selected=d.selected;S.editing=d.editing??-1;S.editorTouched=!!d.editor_touched;S.editorBaseline=d.editor_baseline||null;S.lastSaved=null;S.patternOptions=[];S.patternSource='Rascunho automático recuperado';
+  S.draftId=d.draft_id;S.sourceJobId=d.source_job_id||'';S.services=cp(d.services||[]);S.editor=d.editor?cp(d.editor):null;S.selected=d.selected;S.editing=d.editing??-1;S.editorTouched=!!d.editor_touched;S.editorBaseline=d.editor_baseline||null;S.lastSaved=null;S.patternOptions=[];S.patternSource='Rascunho automático recuperado';
   window.Book.load(d.book);for(const name of ['workOrder','date','responsible','location','notes'])$(name).value=d[name==='workOrder'?'work_order':name]||'';
   $('exports').hidden=true;renderServices();renderLabor();if(S.editor&&S.selected){prepareBaseControls();renderEditor();}else $('editor').innerHTML='<div class="empty"><h3>Rascunho recuperado</h3><p>Selecione um serviço para continuar.</p></div>';
   persist();showTab('work');await recalculate();status('Rascunho recuperado. Salvamento automático ativo.');
@@ -60,15 +60,7 @@
   await selectLabor(pattern.editor.labor_id,{...cp(pattern.editor),entry_id:entry,point_id,quantity:'1',reviewed:false},-1,true);
   S.patternSource=`Padrão observado em ${pattern.support} de ${pattern.uses} registros`;S.editorTouched=false;if(S.editing<0)rememberEditorStart();showTab('book');renderEditor();persist();
  }
- function displayNotice(data){
-  const banner=$('updateNotice');
-  if(!data.available){banner.hidden=true;return;}
-  const key=String(data.key||data.remote_version||data.remote);
-  if(sessionStorage.getItem('engelmig-update-dismissed')===key)return;
-  notification=data;
-  banner.innerHTML=`<div><strong>Atualização disponível${data.remote_version?' · versão '+esc(data.remote_version):''}</strong><span>${data.mode==='branch'?'Nova versão na branch '+esc(data.branch)+'.':data.mode==='tag'?'Nova tag de versão publicada.':'Nova Release publicada.'} A instalação e a reinicialização são automáticas.</span></div><button id="notificationOpen" class="primary">Ver atualização</button><button id="notificationDismiss" class="text-button" aria-label="Dispensar aviso de atualização">×</button>`;
-  banner.hidden=false;
- }
+ function displayNotice(data){notification=data.available?data:null;window.UpdateUI?.display(data);}
  async function checkNotice(force=false){
   try{const data=await api('/api/update-notice',{force});displayNotice(data);if(force&&data.error)toast(data.error,true);return data;}catch{if(force)toast('Não foi possível verificar a atualização.',true);}
  }
@@ -89,7 +81,6 @@
   $('learnedPatterns').onclick=run(async ev=>{const el=ev.target.closest('[data-pattern-use]');if(el){const pattern=patterns.find(p=>p.id===el.dataset.patternUse);if(pattern)await usePattern(pattern);}});
   $('workingDrafts').onclick=run(async ev=>{const button=ev.target.closest('[data-resume-draft]');if(button)await resumeDraft(button.dataset.resumeDraft);});
   $('editor').addEventListener('change',run(async ev=>{if(ev.target.id!=='learnedChoice'||!ev.target.value)return;const p=S.patternOptions.find(x=>x.id===ev.target.value);if(!p)return;await flush();const entry_id=S.editor.entry_id,point_id=S.editor.point_id,quantity=S.editor.quantity;S.editor={...cp(p.editor),entry_id,point_id,quantity,reviewed:false};S.editorTouched=false;S.patternSource=`Padrão observado em ${p.support} de ${p.uses} registros`;prepareBaseControls();if(S.editing<0)rememberEditorStart();renderEditor();persist();}));
-  $('updateNotice').onclick=ev=>{if(ev.target.id==='notificationDismiss'){sessionStorage.setItem('engelmig-update-dismissed',String(notification.key||notification.remote_version||notification.remote));$('updateNotice').hidden=true;}if(ev.target.id==='notificationOpen'){showTab('settings');$('applyUpdate').disabled=!notification.can_update;$('updateResult').textContent='Versão '+notification.remote_version+' disponível. Clique em Instalar atualização para baixar, atualizar e reiniciar o sistema automaticamente.';}};
   window.addEventListener('online',()=>{flush(true).catch(()=>{});checkNotice();});
   window.addEventListener('pagehide',()=>{if(!ready||!S.token)return;const body=JSON.stringify(payload());try{localStorage.setItem(localKey,JSON.stringify({...payload(),updated_at:new Date().toISOString()}));if(new Blob([body]).size<60000)fetch('/api/draft',{method:'POST',headers:{'Content-Type':'application/json','X-App-Token':S.token},body,keepalive:true}).catch(()=>{});}catch{}});
  }

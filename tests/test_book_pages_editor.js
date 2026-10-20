@@ -49,5 +49,13 @@ const book=env.window.Book,pages=env.window.CroquiPages;
  const stash=book.value();assert.equal(stash.point_drafts.p2.editor.quantity,'4');
  const lightweight=book.previewValue();assert.equal(lightweight.point_drafts,undefined);assert.equal(lightweight.croqui_pages[0].drawing,undefined);assert.ok(book.value().croqui_pages[0].drawing);
  book.load(stash);await book.selectPoint('p2');assert.equal(env.S.editor.entry_id,'entryB');assert.equal(env.S.editor.quantity,'4');
+ // Excluir um ponto remove apenas seus vínculos e não permite que rascunhos o recriem.
+ env.recalculate=async()=>{};env.closeLaborEditor=()=>{env.S.editor=null;env.S.selected=null;env.S.editing=-1;};
+ const points=[{id:'p1',number:'1',photos:[{ref:'a'.repeat(64)+'.png'}]},{id:'p2',number:'2',photos:[]}];
+ env.S.services=[{entry_id:'e1',point_id:'p1'},{entry_id:'e2',point_id:'p2'}];env.S.editor=null;env.S.editing=-1;
+ book.load({points,conductors:[{from_point:'p1',to_point:'p2'}],point_drafts:{p1:{editor:{entry_id:'e1',point_id:'p1'},editing:0},p2:{editor:{entry_id:'e2',point_id:'p2'},selected:'laborB',editing:1}}});
+ env.confirm=()=>false;await book.removePoint();assert.equal(book.value().points.length,2);assert.equal(env.S.services.length,2);
+ env.confirm=()=>true;await book.removePoint();assert.deepEqual(Array.from(book.value().points,p=>p.id),['p2']);assert.equal(book.value().conductors.length,0);assert.equal(env.S.services[0].entry_id,'e2');assert.equal(env.S.editor.entry_id,'e2');assert.equal(env.S.editing,0);assert.equal(book.value().point_drafts.p1,undefined);
+ await book.removePoint();assert.equal(book.value().points.length,0);assert.equal(env.S.services.length,0);assert.equal(env.S.editor,null);
  console.log('OK: migração, páginas independentes, troca após salvamento, falha de gravação, exportação e proteção contra resposta atrasada de outra obra.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

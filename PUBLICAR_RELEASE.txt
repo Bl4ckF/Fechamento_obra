@@ -1,26 +1,26 @@
-PUBLICAR ATUALIZAÇÕES PEQUENAS — v1.3.4
+PUBLICAR ATUALIZAÇÕES PEQUENAS — v1.3.5
 
 O repositório mantém o projeto completo. Envie somente os arquivos modificados:
 o próprio Git transmite as diferenças. Não apague os demais arquivos da pasta.
 
 1. Aplique os arquivos desta atualização à pasta atual do seu repositório.
-   app.py, version.json e web/index.html devem indicar 1.3.4.
+   app.py, version.json e web/index.html devem indicar 1.3.5.
 2. Confira as alterações antes de enviar:
    git status
    git diff --stat
-   git add app.py version.json web/app.js web/book.js web/learning.js web/index.html web/input-tools.css web/workflow.js web/workflow.css tools/criar_atualizacao.py tests/test_labor_editor_actions.js PUBLICAR_RELEASE.txt ATUALIZAR.txt
-   git commit -m "v1.3.4: simplificar Pontos e serviços e destacar ações"
+   git add app.py updates.py update_worker.py job_files.py VERIFICAR_E_INICIAR.bat version.json web/app.js web/book.js web/learning.js web/drawing.js web/drawing-ui.js web/symbol-editor.js web/v4.css web/workflow.js web/workflow.css web/input-tools.css web/index.html web/update-ui.js web/update-ui.css tools/criar_atualizacao.py tests/test_updates.py tests/test_job_folders.py tests/test_book_pages_editor.js tests/test_drawing_editor.js tests/test_labor_editor_actions.js PUBLICAR_RELEASE.txt ATUALIZAR.txt LEIA-ME.txt
+   git commit -m "v1.3.5: atualizações em diálogo, registros e editor de croqui"
    git push origin main
    Troque main pela branch do programa, se ela tiver outro nome.
 3. Crie e envie a tag no commit correto:
-   git tag -a v1.3.4 -m "Fechamento de Obras v1.3.4"
-   git push origin v1.3.4
-4. No GitHub, abra Releases > Draft a new release, selecione v1.3.4 e
-   anexe SOMENTE Fechamento_Obras_Engelmig_Atualizacao_v1_3_4.zip.
+   git tag -a v1.3.5 -m "Fechamento de Obras v1.3.5"
+   git push origin v1.3.5
+4. No GitHub, abra Releases > Draft a new release, selecione v1.3.5 e
+   anexe SOMENTE Fechamento_Obras_Engelmig_Atualizacao_v1_3_5.zip.
    Publique como Latest, sem marcar Pre-release. Não basta criar a tag:
    sem esse anexo, o atualizador baixa o código completo da tag.
-5. Nos computadores com a base 1.3.2 instalada, use Configurações >
-   Verificar atualização > Instalar atualização. O programa baixa o
+5. Nos computadores com a base 1.3.2 instalada, clique no sino >
+   Atualizar agora. O programa baixa o
    pacote anexado, substitui seus arquivos e reinicia automaticamente.
    A sincronização de registros é independente dessa atualização.
 
@@ -28,7 +28,7 @@ PRÓXIMAS VERSÕES
 Mantenha o ZIP completo da versão 1.3.2 como referência fixa. Depois de
 alterar a versão e o código, gere um pacote cumulativo a partir dessa base:
 
-python tools/criar_atualizacao.py --base "C:\Backups\Fechamento_Obras_Engelmig_v1_3_2.zip" --saida "C:\Atualizacoes\Fechamento_Obras_Engelmig_Atualizacao_v1_3_5.zip"
+python tools/criar_atualizacao.py --base "C:\Backups\Fechamento_Obras_Engelmig_v1_3_2.zip" --saida "C:\Atualizacoes\Fechamento_Obras_Engelmig_Atualizacao_v1_3_6.zip"
 
 O pacote reúne as diferenças desde a base, para que uma máquina ainda na
 1.3.2 possa pular diretamente à versão nova. Não use o ZIP incremental como
@@ -44,3 +44,7 @@ existente; a instalação automática é para Windows e repositório público.
 dados/, .git/ e runtime/ são preservados. Instalações anteriores à 1.3.2
 precisam primeiro receber a base completa 1.3.2. O ZIP incremental não é
 uma primeira instalação. Este pacote não publica a Release por conta própria.
+
+A reinicialização na mesma aba exige que a atualização seja iniciada por
+uma instalação 1.3.5 ou posterior. Na primeira instalação desta versão,
+prefira copiar os arquivos com o programa fechado, conforme ATUALIZAR.txt.

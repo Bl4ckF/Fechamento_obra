@@ -4,6 +4,8 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
+import subprocess
 import sys
 import time
 from zipfile import ZipFile
@@ -131,23 +133,64 @@ def install(root, archive, expected):
     return len(items)
 
 
+def restart_app(root, port):
+    """Abre o servidor na mesma origem sem criar outra guia do navegador."""
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection(('127.0.0.1', port), timeout=.25):
+                pass
+        except OSError:
+            break
+        time.sleep(.2)
+    else:
+        raise TimeoutError('A porta do programa ainda está em uso. Feche a instância anterior e inicie novamente.')
+    return subprocess.Popen([sys.executable, '-u', str(Path(root).resolve() / 'app.py'),
+                             '--no-browser', '--reuse-port', '--port', str(port)],
+                            cwd=str(Path(root).resolve()), env=dict(os.environ), close_fds=True,
+                            creationflags=getattr(subprocess, 'CREATE_NEW_CONSOLE', 0))
+
+
+def status(path, state, message, **fields):
+    if not path:
+        return
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name + '.tmp')
+    temporary.write_text(json.dumps(dict(state=state, message=message, updated_at=time.time(), **fields), ensure_ascii=False), encoding='utf-8')
+    os.replace(temporary, target)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', required=True)
     parser.add_argument('--archive', required=True)
     parser.add_argument('--version', required=True)
     parser.add_argument('--pid', type=int, required=True)
+    parser.add_argument('--status-path')
+    parser.add_argument('--restart-port', type=int)
     a = parser.parse_args()
     log = Path(a.archive).parent / 'atualizacao.log'
     try:
         wait_pid(a.pid)
+        status(a.status_path, 'installing', 'Instalando os arquivos da atualização.', version=a.version)
         count = install(a.root, a.archive, a.version)
         log.write_text(f'Atualização {a.version}: {count} arquivos instalados.\n', encoding='utf-8')
         print(f'Concluído: {count} arquivos atualizados.', flush=True)
+        if a.restart_port:
+            status(a.status_path, 'restarting', 'Atualização instalada. Reiniciando o programa.', version=a.version)
+            restart_app(a.root, a.restart_port)
+        status(a.status_path, 'done', 'Atualização concluída.', version=a.version, files=count)
         return 0
     except Exception as exc:
         log.write_text(f'ERRO: {type(exc).__name__}: {exc}\n', encoding='utf-8')
         print('Falha na atualização:', exc, file=sys.stderr, flush=True)
+        status(a.status_path, 'error', str(exc), version=a.version)
+        if a.restart_port:
+            try:
+                restart_app(a.root, a.restart_port)
+            except Exception:
+                pass
         return 1
 
 if __name__ == '__main__': sys.exit(main())

@@ -11,7 +11,7 @@ window.DrawingUI=()=>`
  <div class="croqui-editor-layout">
   <aside class="croqui-sidebar" aria-label="Simbologias, linhas e propriedades">
    <div class="sidebar-heading"><strong>Simbologias da rede</strong><span id="symbolCount"></span></div>
-   <button id="dSymbolEditor" class="secondary new-line-button">Criar / editar simbologia</button><button id="dNewLine" class="secondary new-line-button">+ Nova linha</button>
+   <button id="dNewText" class="primary new-line-button">+ Inserir texto</button><button id="dSymbolEditor" class="secondary new-line-button">Criar / editar simbologia</button><button id="dNewLine" class="secondary new-line-button">+ Nova linha</button>
    <section id="symbolControls" class="object-properties" hidden><h4 id="symbolSelected"></h4>
     <label>Nome / legenda do símbolo<input id="sLabel" maxlength="96" placeholder="Digite o nome que aparecerá no croqui"></label>
     <div class="property-grid"><label>Escala (%)<input id="sScale" type="number" min="10" max="1000" step="5" value="100"></label><label>Rotação (°)<input id="sRotation" type="number" min="-360" max="360" value="0"></label></div>
@@ -31,7 +31,7 @@ window.DrawingUI=()=>`
     <div class="property-actions"><button id="lDuplicate" class="secondary">Duplicar</button><button id="lDelete" class="secondary">Excluir</button><button id="lRestore" class="secondary">Restaurar linha original</button></div>
     <small>Arraste o traço para mover. Em linhas retas, arraste as pontas para alterar o comprimento e a direção.</small>
    </section>
-   <section id="textControls" class="object-properties" hidden><h4 id="pdfSelectionLabel"></h4><small>Selecione o texto e arraste o botão ↔ acima dele. Para precisão, altere X e Y abaixo.</small>
+   <section id="textControls" class="object-properties" hidden><h4 id="pdfSelectionLabel"></h4><label>Conteúdo do texto<textarea id="dTextContent" rows="3" maxlength="2000" placeholder="Digite o texto do croqui"></textarea></label><small>Selecione o texto e arraste o botão ↔ acima dele. Para precisão, altere X e Y abaixo.</small>
     <label>Fonte<select id="dFont"><option>Arial</option><option>Times New Roman</option><option>Courier New</option></select></label>
     <div class="property-grid"><label>Tamanho<input id="dSize" type="number" min="2" max="160" step="0.1" value="22"></label><label>Cor<input id="dColor" type="color" value="#111111"></label><label>X<input id="dX" type="number" min="0" max="1200" value="0"></label><label>Y<input id="dY" type="number" min="0" max="800" value="0"></label><label>Rotação<input id="dRotation" type="number" min="-360" max="360" value="0"></label></div>
     <label class="check-label"><input id="dBold" type="checkbox">Negrito</label><label class="check-label"><input id="dItalic" type="checkbox">Itálico</label>

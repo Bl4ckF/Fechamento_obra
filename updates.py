@@ -22,6 +22,7 @@ from repository import repository_name
 
 _notices = {}
 _notice_lock = threading.Lock()
+_apply_lock = threading.Lock()
 MAX_DOWNLOAD = 200 * 1024 * 1024
 API_REPO = 'https://api.github.com/repos/'
 
@@ -218,7 +219,23 @@ def valid_archive(archive, expected_version):
     raise ValueError('O ZIP não contém app.py, updates.py, INICIAR.bat e version.json na mesma pasta.')
 
 
-def apply(root, settings, current):
+def read_status(data_dir):
+    try:
+        value = json.loads((Path(data_dir) / 'atualizacao_status.json').read_text(encoding='utf-8'))
+        return value if isinstance(value, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def write_status(path, state, message, **fields):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + '.tmp')
+    temporary.write_text(json.dumps(dict(state=state, message=message, updated_at=time.time(), **fields), ensure_ascii=False), encoding='utf-8')
+    os.replace(temporary, path)
+
+
+def apply(root, settings, current, port=8766, data_dir=None):
     """Prepara atualização e aciona BAT. Caller deve desligar o servidor após responder."""
     state = check(root, settings, current)
     if state.get('error'):
@@ -228,8 +245,13 @@ def apply(root, settings, current):
     root = Path(root).resolve()
     if os.name != 'nt':
         raise ValueError('A instalação automática por BAT está disponível no Windows.')
+    if not _apply_lock.acquire(blocking=False):
+        raise ValueError('Uma atualização já está em andamento nesta instalação.')
     work = Path(tempfile.mkdtemp(prefix='engelmig-update-'))
+    status_path = Path(data_dir or root / 'dados').resolve() / 'atualizacao_status.json'
+    started = False
     try:
+        write_status(status_path, 'downloading', 'Baixando o pacote de atualização.', version=state['remote_version'])
         archive = work / 'release.zip'
         download_release(state['download_url'], archive)
         valid_archive(archive, state['remote_version'])
@@ -237,29 +259,35 @@ def apply(root, settings, current):
         # BAT e worker ficam fora da pasta que será substituída.
         bat = work / 'ATUALIZAR_E_REINICIAR.bat'
         py = Path(sys.executable).resolve()
-        def bat_quote(p):
-            s = str(p)
-            if any(ch in s for ch in ('\r', '\n', '"', '%', '!')):
-                raise ValueError('Caminho contém caracteres incompatíveis com o BAT.')
-            return '"' + s + '"'
         bat.write_text(
             '@echo off\nsetlocal DisableDelayedExpansion\nchcp 65001 >nul\n'
             'title Engelmig - Atualizacao automatica\n'
             'echo Aguardando o encerramento do aplicativo...\n'
-            f'{bat_quote(py)} {bat_quote(work / "update_worker.py")} '
-            f'--root {bat_quote(root)} --archive {bat_quote(archive)} '
-            f'--version {bat_quote(state["remote_version"])} --pid {os.getpid()}\n'
+            '"%ENGELMIG_UPDATE_PYTHON%" "%ENGELMIG_UPDATE_WORKER%" '
+            '--root "%ENGELMIG_UPDATE_ROOT%" --archive "%ENGELMIG_UPDATE_ARCHIVE%" '
+            '--version "%ENGELMIG_UPDATE_VERSION%" --pid %ENGELMIG_UPDATE_PID% '
+            '--status-path "%ENGELMIG_UPDATE_STATUS%" --restart-port %ENGELMIG_UPDATE_PORT%\n'
             'if errorlevel 1 goto ERRO\n'
-            'echo Atualizacao instalada. Abrindo o programa...\n'
-            f'start "" {bat_quote(root / "INICIAR.bat")}\n'
+            'echo Atualizacao instalada. O programa foi reiniciado na mesma aba.\n'
             'exit /b 0\n:ERRO\n'
             'echo Falha ao atualizar. O programa anterior foi preservado ou restaurado.\n'
             'echo Confira o log de atualizacao nesta pasta.\n'
-            'pause\nexit /b 1\n', encoding='utf-8-sig'
+            'exit /b 1\n', encoding='utf-8'
         )
-        subprocess.Popen(['cmd.exe', '/c', str(bat)], cwd=str(work), creationflags=getattr(subprocess, 'CREATE_NEW_CONSOLE', 0), close_fds=True)
+        env = dict(os.environ, ENGELMIG_UPDATE_PYTHON=str(py), ENGELMIG_UPDATE_WORKER=str(work / 'update_worker.py'),
+                   ENGELMIG_UPDATE_ROOT=str(root), ENGELMIG_UPDATE_ARCHIVE=str(archive),
+                   ENGELMIG_UPDATE_VERSION=str(state['remote_version']), ENGELMIG_UPDATE_PID=str(os.getpid()),
+                   ENGELMIG_UPDATE_STATUS=str(status_path), ENGELMIG_UPDATE_PORT=str(int(port)),
+                   ENGELMIG_DATA_DIR=str(status_path.parent))
+        write_status(status_path, 'installing', 'Aguardando o programa encerrar para instalar.', version=state['remote_version'])
+        subprocess.Popen(['cmd.exe', '/d', '/c', str(bat)], cwd=str(work), env=env, creationflags=getattr(subprocess, 'CREATE_NEW_CONSOLE', 0), close_fds=True)
+        started = True
         return {'started': True, 'updated': False, 'remote_version': state['remote_version'],
-                'message': 'Download concluído. Fechando o servidor; o BAT instalará a atualização e abrirá o aplicativo novamente.'}
-    except Exception:
+                'message': 'Download concluído. Instalando e reiniciando; mantenha esta aba aberta.'}
+    except Exception as exc:
+        write_status(status_path, 'error', str(exc), version=state['remote_version'])
         shutil.rmtree(work, ignore_errors=True)
         raise
+    finally:
+        if not started:
+            _apply_lock.release()

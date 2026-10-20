@@ -49,6 +49,7 @@ goto FINALIZAR
 :TERMINOU
 set "ENGELMIG_START_EXIT=%ERRORLEVEL%"
 :FINALIZAR
+if "%ENGELMIG_START_EXIT%"=="0" (endlocal & exit /b 0)
 echo.
 echo Pressione qualquer tecla para fechar esta janela.
 pause >nul

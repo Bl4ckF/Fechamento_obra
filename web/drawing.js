@@ -17,7 +17,7 @@
  function activity(){lastActivity=Date.now();}
  function editableText(source){if(!sourceTexts.has(source))sourceTexts.set(source,window.PDFText.editable(source));return sourceTexts.get(source);}
  function sourceMap(sources){if(!textMaps.has(sources))textMaps.set(sources,new Map(sources.map(t=>[t.id,t])));return textMaps.get(sources);}
- let armed='',symbolPreview=null,symbolDrag=null,linePreview=null,lineDrag=null,textPreview=null,textDrag=null,lineTool=false,lineStart=null,linePointer=null,viewScale=1,pan=null,paintFrame=null,transformPreview=null,transformDrag=null,searchResults=[],searchPosition=-1,searchLimit=30,searchBusy=false;
+ let armed='',symbolPreview=null,symbolDrag=null,linePreview=null,lineDrag=null,textPreview=null,textDrag=null,lineTool=false,textTool=false,lineStart=null,linePointer=null,viewScale=1,pan=null,paintFrame=null,transformPreview=null,transformDrag=null,searchResults=[],searchPosition=-1,searchLimit=30,searchBusy=false;
  const el=id=>document.getElementById(id);
  const clamp=(n,max)=>Math.max(0,Math.min(max,n));
  function previewDoc(before,id){return {...before,objects:before.objects.map(o=>o.id===id?clone(o):o)};}
@@ -32,7 +32,7 @@
   const old=selected,focused=document.activeElement;selected='';finishEditing();if([symbolNodes.get(old),lineNodes.get(old),el('textMoveHandle'),el('tRotate'),el('tScaleNW'),el('tScaleNE'),el('tScaleSW'),el('tScaleSE')].includes(focused))focused?.blur();window.getSelection?.()?.removeAllRanges();cancelInsertion();syncControls();resize();draw();
  }
  function updateTransformHandles(doc){
-  const o=selectedObject(doc),show=!!o&&!o.deleted&&!!background&&!armed&&!lineTool,b=show?bounds(o):null;
+  const o=selectedObject(doc),show=!!o&&!o.deleted&&!!background&&!armed&&!lineTool&&!textTool,b=show?bounds(o):null;
   el('transformOutline').hidden=!show;if(show)Object.assign(el('transformOutline').style,{left:(b.x-5/viewScale)+'px',top:(b.y-5/viewScale)+'px',width:(b.w+10/viewScale)+'px',height:(b.h+10/viewScale)+'px'});
   const pad=12/viewScale;const positions=show?[[b.x-pad,b.y-pad],[b.x+b.w+pad,b.y-pad],[b.x-pad,b.y+b.h+pad],[b.x+b.w+pad,b.y+b.h+pad],[b.x+b.w/2,Math.max(0,b.y-43/viewScale)]]:[];
   ['tScaleNW','tScaleNE','tScaleSW','tScaleSE','tRotate'].forEach((id,i)=>{const node=el(id);node.hidden=!show;if(show)Object.assign(node.style,{left:positions[i][0]+'px',top:positions[i][1]+'px',width:((i===4?28:13)/viewScale)+'px',height:((i===4?28:13)/viewScale)+'px',fontSize:(21/viewScale)+'px'});});
@@ -81,10 +81,10 @@
  }
  function symbolError(error){el('symbolHint').textContent=error.message;}
  function selectedSymbol(doc=model.doc){return doc.objects.find(o=>o.id===selected&&o.type==='symbol');}
- function cancelInsertion(){const hadInsertion=armed||lineTool||linePreview;armed='';lineTool=false;lineStart=null;linePointer=null;linePreview=null;updateModes();if(hadInsertion)requestDraw();}
+ function cancelInsertion(){const hadInsertion=armed||lineTool||textTool||linePreview;armed='';lineTool=false;textTool=false;lineStart=null;linePointer=null;linePreview=null;updateModes();if(hadInsertion)requestDraw();}
  function updateModes(){
-  el('pdfEditorStage').classList.toggle('placing-item',!!armed||lineTool);el('dCancelInsert').hidden=!armed&&!lineTool;
-  el('symbolHint').textContent=armed?'Clique na página para inserir: '+window.NetworkSymbols.get(armed).name+'. Esc cancela.':lineTool?(lineStart?'Clique no destino da linha. Shift alinha em 45°. Esc cancela.':'Clique e arraste ou marque as duas pontas da linha. Esc cancela.'):'Clique no texto para editar ou no símbolo/linha para selecionar. Arraste símbolos e linhas para mover.';
+  el('pdfEditorStage').classList.toggle('placing-item',!!armed||lineTool||textTool);el('dCancelInsert').hidden=!armed&&!lineTool&&!textTool;
+  el('symbolHint').textContent=textTool?'Clique na página para inserir o texto. Esc cancela.':armed?'Clique na página para inserir: '+window.NetworkSymbols.get(armed).name+'. Esc cancela.':lineTool?(lineStart?'Clique no destino da linha. Shift alinha em 45°. Esc cancela.':'Clique e arraste ou marque as duas pontas da linha. Esc cancela.'):'Clique no texto para editar ou no símbolo/linha para selecionar. Arraste símbolos e linhas para mover.';
  }
  function palette(){
   const query=el('symbolSearch').value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase(),category=el('symbolGroup').value;
@@ -120,7 +120,7 @@
   for(const o of doc.objects.filter(o=>o.type==='symbol'&&(!fast||o.id===selected))){let node=symbolNodes.get(o.id);
    if(!node){node=document.createElement('button');node.type='button';node.className='symbol-hit';node.dataset.symbolId=o.id;
     node.onfocus=()=>{if(selected!==o.id)selectSymbol(o.id);};
-    node.onpointerdown=event=>{if(armed||lineTool||event.button!==0)return;event.preventDefault();event.stopPropagation();selectSymbol(o.id);node.focus();const current=selectedSymbol();symbolDrag={id:o.id,start:stagePoint(event),before:model.doc,x:current.x1,y:current.y1,pointerId:event.pointerId};node.setPointerCapture(event.pointerId);};
+    node.onpointerdown=event=>{if(armed||lineTool||textTool||event.button!==0)return;event.preventDefault();event.stopPropagation();selectSymbol(o.id);node.focus();const current=selectedSymbol();symbolDrag={id:o.id,start:stagePoint(event),before:model.doc,x:current.x1,y:current.y1,pointerId:event.pointerId};node.setPointerCapture(event.pointerId);};
     node.onpointermove=event=>{if(symbolDrag?.id!==o.id)return;const p=stagePoint(event);symbolPreview=previewDoc(symbolDrag.before,symbolDrag.id);const item=symbolPreview.objects.find(x=>x.id===o.id);item.x1=clamp(symbolDrag.x+p.x-symbolDrag.start.x,1200);item.y1=clamp(symbolDrag.y+p.y-symbolDrag.start.y,800);requestDraw();};
     node.onpointerup=event=>{if(symbolDrag?.id!==o.id)return;const next=symbolPreview;symbolDrag=null;symbolPreview=null;if(node.hasPointerCapture?.(event.pointerId))node.releasePointerCapture(event.pointerId);if(next&&JSON.stringify(next.objects)!==JSON.stringify(model.doc.objects)){model.commit(next);changed();}else draw();syncControls();};
     node.onpointercancel=()=>{symbolPreview=null;symbolDrag=null;draw();syncControls();};
@@ -160,7 +160,7 @@
  function restoreLine(){const next=previewDoc(model.doc,selected);next.objects=next.objects.filter(o=>o.id!==selected||!o.pdf_line_id);model.commit(next);changed();syncControls();}
  function moveLine(id,dx,dy){try{const next=previewDoc(model.doc,id);shiftLine(editLine(next,id),dx,dy);model.commit(next);changed();syncControls();}catch(error){symbolError(error);}}
  function beginLineDrag(id,event,node,endpoint=null){
-  if(armed||lineTool||event.button!==0)return;event.preventDefault();event.stopPropagation();selectLine(id);node.focus();
+  if(armed||lineTool||textTool||event.button!==0)return;event.preventDefault();event.stopPropagation();selectLine(id);node.focus();
   lineDrag={id,start:stagePoint(event),before:model.doc,endpoint,node,pointerId:event.pointerId};node.setPointerCapture(event.pointerId);
  }
  function dragLine(event){if(!lineDrag||event.pointerId!==lineDrag.pointerId)return;event.preventDefault();const p=stagePoint(event),dx=p.x-lineDrag.start.x,dy=p.y-lineDrag.start.y;if(!dx&&!dy)return;
@@ -210,12 +210,12 @@
  }
  function initSymbols(){
   refreshSymbols();
-  el('dSymbolEditor').onclick=()=>openSymbolEditor(false);el('sEditDrawing').onclick=()=>openSymbolEditor(true);
+  el('dNewText').onclick=()=>{finishEditing();cancelInsertion();selected='';textTool=true;syncControls();updateModes();requestDraw();};el('dSymbolEditor').onclick=()=>openSymbolEditor(false);el('sEditDrawing').onclick=()=>openSymbolEditor(true);
   el('symbolSearch').oninput=palette;el('symbolGroup').onchange=palette;
   el('dCancelInsert').onclick=cancelInsertion;
   el('sDuplicate').onclick=duplicateSymbol;el('sDelete').onclick=removeSymbol;
   for(const field of ['sType','sScale','sRotation','sColor','sStatus','sLabel','sX','sY','sOpaque'])el(field).onchange=updateSymbol;el('sLabel').oninput=updateSymbol;
-  el('pdfEditorStage').addEventListener('pointerdown',event=>{activity();if(armed)placeSymbol(event);else if(lineTool)startNewLine(event);else if(event.button===0&&['pdfEditorStage','drawingCanvas','lineLayer','symbolLayer','pdfTextLayer','transformHandles','lineHandles'].includes(event.target?.id))deselect();},true);
+  el('pdfEditorStage').addEventListener('pointerdown',event=>{activity();if(textTool)placeText(event);else if(armed)placeSymbol(event);else if(lineTool)startNewLine(event);else if(event.button===0&&['pdfEditorStage','drawingCanvas','lineLayer','symbolLayer','pdfTextLayer','transformHandles','lineHandles'].includes(event.target?.id))deselect();},true);
   el('pdfEditorStage').addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();deselect();}});
   document.addEventListener?.('keydown',event=>{if(event.key==='Escape'&&!document.querySelector('dialog[open]')){event.preventDefault();deselect();}});
   palette();updateModes();
@@ -230,10 +230,20 @@
    const clean=clone(definition);delete clean.revision;delete clean.updated_at;
    if(JSON.stringify(target.symbol_definition)===JSON.stringify(clean))return;
    const next=previewDoc(model.doc,targetId),o=next.objects.find(o=>o.id===targetId);o.symbol_id=definition.id;o.symbol_definition=clean;model.commit(next);changed();syncControls();
-  },onUse:id=>{selected='';armed=id;updateModes();syncControls();draw();}});}catch(error){symbolError(error);}
+  },onUse:id=>{if(targetId&&currentPageId()===pageId&&model.doc.objects.some(o=>o.id===targetId)){selectSymbol(targetId);}else{selected='';armed=id;updateModes();syncControls();draw();}}});}catch(error){symbolError(error);}
  }
- function sourceList(){return model.doc.pdf_texts||[];}
- function currentText(source,doc=model.doc){return doc.objects.find(o=>o.pdf_text_id===source.id)||window.PDFText.editable(source);}
+ function placeText(event){
+  if(event.button!==0)return;event.preventDefault();event.stopPropagation();
+  if(!model.doc.background_ref){symbolError(Error('Importe a imagem ou o PDF antes de inserir o texto.'));cancelInsertion();return;}
+  if(model.doc.objects.length>=1000){symbolError(Error('Limite de 1.000 alterações atingido.'));return;}
+  const point=stagePoint(event),id='text_'+crypto.randomUUID().replaceAll('-','');
+  const object={id,type:'text',x1:point.x,y1:point.y,text:'Novo texto',font:'Arial',size:22,color:'#111111',rotation:0,bold:false,italic:false,width:1,dash:'solid',arrow:'none'};
+  cancelInsertion();model.commit({...model.doc,objects:model.doc.objects.concat([object])});selected=id;changed();syncControls();draw();
+  const node=textNodes.get(id);node?.focus();if(node&&document.createRange&&window.getSelection){const range=document.createRange();range.selectNodeContents(node);const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);}
+ }
+ function setTextContent(){if(!selected)return;const next=previewDoc(model.doc,selected),object=editObject(next,selected);if(!object)return;object.text=el('dTextContent').value.slice(0,2000);delete object.text_width;model.commit(next);changed();}
+ function sourceList(doc=model.doc){const added=doc.objects.filter(o=>o.type==='text'&&!o.pdf_text_id);return added.length?(doc.pdf_texts||[]).concat(added):doc.pdf_texts||[];}
+ function currentText(source,doc=model.doc){return doc.objects.find(o=>o.id===source.id)||window.PDFText.editable(source);}
  function initTextMove(){
   const handle=el('textMoveHandle');
   handle.onpointerdown=event=>{if(event.button!==0)return;event.preventDefault();event.stopPropagation();finishEditing();const source=sourceList().find(t=>t.id===selected);if(!source)return;const o=currentText(source);textDrag={id:selected,start:stagePoint(event),before:model.doc,x:o.x1,y:o.y1,pointerId:event.pointerId};handle.setPointerCapture(event.pointerId);};
@@ -247,6 +257,7 @@
  function metrics(o){if(textMetrics.has(o))return textMetrics.get(o);ctx.save();ctx.font=fontCSS(o);const width=o.text_width??Math.max(...String(o.text).split('\n').map(line=>ctx.measureText(line).width));ctx.restore();const value={width,offset:baseline(o)};textMetrics.set(o,value);return value;}
  function editObject(doc,ident){let o=doc.objects.find(o=>o.id===ident);if(o)return o;const source=sourceList().find(t=>t.id===ident);if(!source)return null;if(doc.objects.length>=1000)throw Error('Limite de 1.000 alterações atingido.');o=window.PDFText.editable(source);delete o.box;doc.objects.push(o);return o;}
  function syncControls(){const source=sourceList().find(t=>t.id===selected),o=source?currentText(source):null;
+  if(el('dTextContent')){el('dTextContent').disabled=!o;if(document.activeElement!==el('dTextContent'))el('dTextContent').value=o?.text||'';}
   el('pdfSelectionLabel').textContent=source?'Texto selecionado: '+(o.text||source.text).slice(0,100):'Clique em um texto da página para editar.';
   for(const [key,field] of [['color','dColor'],['size','dSize'],['font','dFont'],['rotation','dRotation'],['x1','dX'],['y1','dY']]){el(field).disabled=!o;if(o)el(field).value=o[key]??(key==='font'?'Arial':0);}
   for(const [key,field] of [['bold','dBold'],['italic','dItalic']]){el(field).disabled=!o;el(field).checked=!!o?.[key];}el('textControls').hidden=!o;syncSymbolControls();syncLineControls();
@@ -266,7 +277,7 @@
   range.deleteContents();const text=document.createTextNode(value);range.insertNode(text);range.setStartAfter(text);range.collapse(true);selection.removeAllRanges();selection.addRange(range);editInline(node.dataset.textId,node);
  }
  function updateTextLayer(doc=model.doc,fast=false){
-  const layer=el('pdfTextLayer'),sources=sourceList(),modifiedTexts=new Map(doc.objects.filter(o=>o.pdf_text_id).map(o=>[o.pdf_text_id,o])),alive=new Set(sources.map(t=>t.id)),query=el('dPdfSearch').value.trim().toLocaleLowerCase('pt-BR');
+  const layer=el('pdfTextLayer'),sources=sourceList(doc),modifiedTexts=new Map(doc.objects.filter(o=>o.type==='text').map(o=>[o.id,o])),alive=new Set(sources.map(t=>t.id)),query=el('dPdfSearch').value.trim().toLocaleLowerCase('pt-BR');
   for(const [id,node] of textNodes)if(!fast&&!alive.has(id)){node.remove();textNodes.delete(id);}
   let found=0;
   for(const source of (fast?sources.filter(t=>t.id===selected):sources)){
@@ -289,7 +300,7 @@
   layer.hidden=!background;
   const source=sources.find(t=>t.id===selected),handle=el('textMoveHandle');handle.hidden=!source||!background;
   if(source){const o=currentText(source,doc),b=window.PDFText.textBounds(o);Object.assign(handle.style,{left:clamp(b.x,1200-32/viewScale)+'px',top:Math.max(0,b.y-30/viewScale)+'px',width:(28/viewScale)+'px',height:(26/viewScale)+'px',fontSize:(17/viewScale)+'px'});}
-  if(fast)return;el('dPdfCount').textContent=query?found+' correspondência(s) em '+sources.length+' textos.':sources.length?sources.length+' blocos de texto reconhecidos.':'Nenhum texto selecionável reconhecido. Importe um PDF com texto selecionável.';
+  if(fast)return;el('dPdfCount').textContent=query?found+' correspondência(s) em '+sources.length+' textos.':sources.length?sources.length+' textos editáveis na página.':'Nenhum texto selecionável reconhecido. Importe um PDF com texto selecionável.';
   el('pdfNoText').hidden=sources.length>0;
   el('pdfNoText').textContent=model.doc.background_ref?'Esta página é uma imagem ou não contém texto reconhecível. Importe o PDF original com texto selecionável.':'Importe o PDF do croqui para começar.';
  }
@@ -389,18 +400,18 @@
  function load(doc,fallbackRef,needsImage=false){
   if(doc&&doc===loadedDoc&&!backgroundError){if(needsImage&&!dirty){dirty=true;lastRendered='';scheduleImage();}return;}
   const incoming=doc||{...blank(),background_ref:fallbackRef||null},key=JSON.stringify(incoming);if(key===loadedKey&&!backgroundError){loadedDoc=doc;if(needsImage&&!dirty){dirty=true;lastRendered='';scheduleImage();}return;}
-  endPan();clearTimeout(navigationTimer);navigating=false;revision++;active=selected=armed='';symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;lineStart=null;loadedKey=key;loadedDoc=doc;model=new DrawingModel(incoming);dirty=needsImage;lastRendered=needsImage?'':key;clearTimeout(timer);if(needsImage)scheduleImage();
+  endPan();clearTimeout(navigationTimer);navigating=false;revision++;active=selected=armed='';symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;textTool=false;lineStart=null;loadedKey=key;loadedDoc=doc;model=new DrawingModel(incoming);dirty=needsImage;lastRendered=needsImage?'':key;clearTimeout(timer);if(needsImage)scheduleImage();
   for(const node of textNodes.values())node.remove();textNodes.clear();for(const node of symbolNodes.values())node.remove();symbolNodes.clear();for(const node of lineNodes.values())node.remove();lineNodes.clear();updateBackground();refreshSearch();draw();if(ctx){syncControls();updateModes();zoom=1;resize();syncZoom();el('pdfEditorViewport').scrollLeft=el('pdfEditorViewport').scrollTop=0;}
  }
- function history(action){symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;lineStart=null;armed='';finishEditing();if(model[action]()){if(!selectedSymbol()&&!selectedLine()&&!sourceList().some(t=>t.id===selected))selected='';changed();syncControls();updateModes();}}
+ function history(action){symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;textTool=false;lineStart=null;armed='';finishEditing();if(model[action]()){if(!selectedSymbol()&&!selectedLine()&&!sourceList().some(t=>t.id===selected))selected='';changed();syncControls();updateModes();}}
  function updateSelected(){if(!selected)return;finishEditing();try{const next=previewDoc(model.doc,selected),o=editObject(next,selected);if(!o)return;
   Object.assign(o,{color:el('dColor').value,size:Math.max(2,Math.min(160,Number(el('dSize').value)||22)),font:el('dFont').value,rotation:clamp((Number(el('dRotation').value)||0)+360,720)-360,x1:clamp(Number(el('dX').value)||0,1200),y1:clamp(Number(el('dY').value)||0,800),bold:el('dBold').checked,italic:el('dItalic').checked});delete o.text_width;
   if(JSON.stringify(next.objects)!==JSON.stringify(model.doc.objects)){model.commit(next);changed();}syncControls();
  }catch(error){el('drawingStatus').textContent=error.message;}}
- function remove(){if(!selected)return;finishEditing();try{const next=previewDoc(model.doc,selected),o=editObject(next,selected);if(!o)return;o.text='';delete o.text_width;model.commit(next);changed();syncControls();}catch(error){el('drawingStatus').textContent=error.message;}}
+ function remove(){if(!selected)return;finishEditing();try{const next=previewDoc(model.doc,selected),o=editObject(next,selected);if(!o)return;if(o.pdf_text_id){o.text='';delete o.text_width;}else{next.objects=next.objects.filter(item=>item.id!==selected);selected='';}model.commit(next);changed();syncControls();}catch(error){el('drawingStatus').textContent=error.message;}}
  function restoreText(){finishEditing();const next=previewDoc(model.doc,selected);next.objects=next.objects.filter(o=>o.id!==selected||!o.pdf_text_id);model.commit(next);changed();syncControls();}
- function clear(){symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;lineStart=null;armed='';finishEditing();if(!model.doc.objects.length)return;model.commit({...model.doc,objects:[]});selected='';changed();syncControls();updateModes();}
- async function setBackground(ref,source,pdf={}){await flush();endPan();finishEditing();model.commit({...blank(),background_ref:ref,background_source:source,pdf_text_background_ref:pdf.cleanRef||null,pdf_texts:pdf.texts||[],pdf_source_ref:pdf.pdfRef||null,pdf_lines:pdf.lines||[]});selected=armed='';symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;lineStart=null;zoom=1;resize();syncZoom();el('pdfEditorViewport').scrollLeft=el('pdfEditorViewport').scrollTop=0;changed();syncControls();updateModes();await flush();}
+ function clear(){symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;textTool=false;lineStart=null;armed='';finishEditing();if(!model.doc.objects.length)return;model.commit({...model.doc,objects:[]});selected='';changed();syncControls();updateModes();}
+ async function setBackground(ref,source,pdf={}){await flush();endPan();finishEditing();model.commit({...blank(),background_ref:ref,background_source:source,pdf_text_background_ref:pdf.cleanRef||null,pdf_texts:pdf.texts||[],pdf_source_ref:pdf.pdfRef||null,pdf_lines:pdf.lines||[]});selected=armed='';symbolPreview=symbolDrag=linePreview=lineDrag=textPreview=textDrag=transformPreview=transformDrag=null;lineTool=false;textTool=false;lineStart=null;zoom=1;resize();syncZoom();el('pdfEditorViewport').scrollLeft=el('pdfEditorViewport').scrollTop=0;changed();syncControls();updateModes();await flush();}
  function searchPages(){return callbacks?.getPages?.()||[{id:'current',drawing:model.doc}];}
  function currentPageId(){return callbacks?.getPageId?.()||'current';}
  function refreshSearch(reset=false){
@@ -431,6 +442,7 @@
   panel.innerHTML=window.DrawingUI();
   canvas=el('drawingCanvas');ctx=canvas.getContext('2d');el('dUndo').onclick=()=>history('undo');el('dRedo').onclick=()=>history('redo');el('dClear').onclick=clear;el('dDelete').onclick=remove;el('dRestoreText').onclick=restoreText;
   el('dPdfSearch').oninput=()=>{refreshSearch(true);draw();};el('dSearchScope').onchange=()=>refreshSearch(true);el('dFindPrevious').onclick=()=>findText(-1);el('pdfSearchMore').onclick=()=>{searchLimit+=30;refreshSearch();};el('dPdfSearch').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();findText();}};el('dFind').onclick=()=>findText();
+  el('dTextContent').oninput=setTextContent;
   ['dFont','dSize','dColor','dX','dY','dRotation','dBold','dItalic'].forEach(id=>el(id).onchange=updateSelected);
   if(typeof ResizeObserver!=='undefined')new ResizeObserver(resize).observe(el('pdfEditorViewport'));else window.addEventListener?.('resize',resize);
   initSymbols();initLines();initTextMove();initTransforms();initNavigation();draw();syncControls();resize();

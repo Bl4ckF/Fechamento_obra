@@ -153,4 +153,48 @@ class ReleaseUpdaterTests(unittest.TestCase):
             self.assertEqual((root / '.git' / 'HEAD').read_text(), 'local')
             self.assertEqual((root / 'runtime' / 'python.exe').read_text(), 'runtime')
 
+
+class RestartFlowTests(unittest.TestCase):
+    def test_apply_prepares_external_worker_without_pause_and_handles_special_paths(self):
+        import os
+        import threading
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)/'Engelmig & espaço % !';root.mkdir()
+            (root/'app.py').write_text('old')
+            work=Path(folder)/'worker';work.mkdir()
+            state={'available':True,'remote_version':'1.3.6','download_url':'https://github.com/test.zip'}
+            def download(url,destination):
+                with zipfile.ZipFile(destination,'w') as archive:
+                    for name in ('app.py','updates.py','INICIAR.bat'):archive.writestr('repo/'+name,'new')
+                    archive.writestr('repo/version.json','{"version":"1.3.6"}')
+            windows=SimpleNamespace(name='nt',environ=dict(os.environ),getpid=lambda:12345,replace=os.replace)
+            with patch('updates.os',windows),patch('updates._apply_lock',threading.Lock()),patch('updates.check',return_value=state),patch('updates.download_release',side_effect=download),patch('updates.tempfile.mkdtemp',return_value=str(work)),patch('updates.subprocess.Popen') as launch:
+                result=updates.apply(root,{},'1.3.5',port=8878,data_dir=root/'dados')
+                self.assertTrue(result['started'])
+                with self.assertRaisesRegex(ValueError,'andamento'):updates.apply(root,{},'1.3.5')
+            script=(work/'ATUALIZAR_E_REINICIAR.bat').read_text()
+            self.assertNotIn('pause',script.lower());self.assertNotIn(str(root),script)
+            self.assertIn('--restart-port %ENGELMIG_UPDATE_PORT%',script)
+            self.assertEqual(launch.call_args.kwargs['env']['ENGELMIG_UPDATE_ROOT'],str(root))
+            self.assertEqual(launch.call_args.kwargs['env']['ENGELMIG_UPDATE_PORT'],'8878')
+            self.assertEqual(updates.read_status(root/'dados')['state'],'installing')
+    def test_restart_keeps_port_and_does_not_open_browser(self):
+        with patch('update_worker.socket.create_connection',side_effect=OSError('closed')),patch('update_worker.subprocess.Popen') as launch:
+            update_worker.restart_app('/tmp/Engelmig com espaço',8878)
+        args=launch.call_args.args[0]
+        self.assertIn('--no-browser',args);self.assertIn('--reuse-port',args)
+        self.assertEqual(args[-2:],['--port','8878'])
+    def test_status_is_atomic_and_readable(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target=Path(folder)/'atualizacao_status.json'
+            update_worker.status(target,'done','Concluído',version='1.3.5')
+            result=updates.read_status(folder)
+            self.assertEqual(result['state'],'done');self.assertEqual(result['version'],'1.3.5')
+            self.assertFalse(target.with_name(target.name+'.tmp').exists())
+    def test_launcher_does_not_pause_on_success(self):
+        source=(Path(updates.__file__).parent/'VERIFICAR_E_INICIAR.bat').read_text()
+        self.assertIn('if "%ENGELMIG_START_EXIT%"=="0" (endlocal & exit /b 0)',source)
+        self.assertLess(source.index('if "%ENGELMIG_START_EXIT%"=="0"'),source.index('pause >nul'))
+
 if __name__ == '__main__': unittest.main()

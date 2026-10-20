@@ -1,35 +1,57 @@
-ATUALIZAÇÃO 1.3.4 — requer o programa completo 1.3.2 ou 1.3.3 já instalado
+ATUALIZAÇÃO 1.3.5 — para instalações completas 1.3.2, 1.3.3 ou 1.3.4
 
-1. Feche o aplicativo e sua janela do Python.
-2. Extraia Fechamento_Obras_Engelmig_Atualizacao_v1_3_4.zip.
+COMO INSTALAR ESTE PACOTE
+1. Feche o programa e sua janela do Python.
+2. Extraia Fechamento_Obras_Engelmig_Atualizacao_v1_3_5.zip.
 3. Copie o CONTEÚDO da pasta Fechamento_Obras_Engelmig extraída para
-   a pasta atual do programa, onde já existe INICIAR.bat.
+   a pasta atual do aplicativo, onde já existe VERIFICAR_E_INICIAR.bat.
 4. Aceite substituir os arquivos de mesmo nome. Não exclua a pasta antiga.
-5. Execute VERIFICAR_E_INICIAR.bat normalmente. Confira v1.3.4 na tela.
+5. Execute VERIFICAR_E_INICIAR.bat e confira v1.3.5 na tela.
 
-Este ZIP contém apenas os arquivos da atualização. Seus registros, fotos,
-croquis, configurações e materiais permanecem na pasta atual do programa.
-Ele não deve ser executado isoladamente como uma instalação nova.
+O pacote é incremental e não funciona como primeira instalação.
+Registros, fotos, croquis e configurações locais são preservados.
 
-NA ETAPA PONTOS E SERVIÇOS
-• Os botões ficam no topo de Pontos e serviços. Selecione ou edite uma
-  mão de obra para habilitar Limpar alterações e Remover mão de obra.
-• Limpar alterações: restaura a última composição carregada. Se o serviço
-  já foi adicionado, restaura a composição aplicada ao ponto. Para descartar
-  toda a seleção, use Remover mão de obra selecionada.
-• Remover mão de obra selecionada: exclui apenas esse lançamento do ponto
-  e dos totais. Se ainda não foi adicionado, descarta a seleção em preparação.
-• As ações são salvas automaticamente. O histórico anterior é preservado.
-• Limpar rascunho atual, em Mais opções, continua limpando o fechamento
-  inteiro em edição, mediante a confirmação já existente.
+SINO E DIÁLOGO DE ATUALIZAÇÃO
+• O sino fica no cabeçalho. Uma versão nova ativa a animação e o indicador 1.
+• Clique no sino para abrir a caixa de diálogo, conferir a versão e atualizar.
+• Ao abrir o aviso, a animação para; o indicador permanece até atualizar.
+• A verificação ocorre ao abrir o aplicativo e a cada 15 minutos.
+• Atualizar agora salva o trabalho, baixa o pacote e reinicia o programa.
+  Mantenha a aba aberta: ela aguarda e recarrega na mesma etapa e ponto.
+• O iniciador fecha ao encerrar normalmente. A janela da atualização fecha
+  ao terminar, e o servidor inicia novamente sem criar outra aba.
+• Esse novo fluxo passa a valer nas atualizações iniciadas a partir da 1.3.5.
+  Uma versão anterior ainda utiliza o atualizador que já estava instalado.
 
-LAYOUT SIMPLIFICADO
-• Uma foto de referência por vez; use as setas para navegar.
-• Legendas, observações e dados da rede ficam em seções recolhidas.
-• Materiais dos serviços adicionados aparecem ao abrir Ver detalhes.
-• Detalhes e configuração reúne as opções avançadas da composição.
-• Prévia do book abre a visualização automática quando precisar.
+PONTOS E SERVIÇOS
+• Limpar alterações e Remover mão de obra selecionada ficam no topo.
+• Excluir ponto fica no cabeçalho do ponto. Antes de excluir, o aplicativo
+  informa quantas fotos, serviços e trechos associados serão removidos
+  deste fechamento. As versões já concluídas no histórico são preservadas.
+• Legendas, observações, materiais já lançados e configurações ficam
+  recolhidos. A galeria mostra uma foto por vez e a prévia abre sob demanda.
 
-Para oferecer este pacote pelo botão de atualização do aplicativo,
-publique uma Release v1.3.4 no GitHub com este ZIP anexado.
-Veja PUBLICAR_RELEASE.txt para os comandos e as próximas versões.
+REGISTROS, PASTAS E REEDIÇÃO
+• Registros exibe uma árvore: obra > versões salvas.
+• Abrir pasta abre o Explorador do Windows na versão selecionada.
+• Fotos do book abre a pasta de fotos, separadas por ponto.
+• Os arquivos ficam em dados/obras/ano/obra/versão, incluindo book.html,
+  mao_de_obra_e_materiais.html, CSV, registro.json, fotos/ e croqui/.
+• Os relatórios HTML podem ser visualizados e impressos como PDF.
+• Editar book abre um book já concluído. Faça as alterações e salve:
+  o programa cria outra versão e mantém a anterior intacta.
+• Registros antigos recebem suas pastas ao clicar em Abrir pasta ou Fotos.
+
+CROQUI
+• Inserir texto é uma ferramenta própria: clique nela e depois no projeto.
+  Digite diretamente na página ou no campo Conteúdo do texto. Os textos
+  novos podem ser movidos, pesquisados, redimensionados e rotacionados.
+• O editor de simbologias tem ferramentas visíveis, grade opcional, zoom,
+  alças para redimensionar, duplicação e ordem de sobreposição.
+• Na área de criação, use Delete, Ctrl+D, Ctrl+Z/Ctrl+Y e as setas.
+• Ao editar o desenho de um símbolo selecionado e usar no croqui, a edição
+  atualiza esse símbolo sem inserir uma cópia adicional.
+
+PUBLICAÇÃO
+Anexe este ZIP a uma Release v1.3.5 no GitHub, marcada como Latest.
+Veja PUBLICAR_RELEASE.txt para os comandos e próximas versões.
