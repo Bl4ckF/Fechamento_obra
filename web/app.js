@@ -84,23 +84,28 @@ async function loadSuggestions(id){const seq=++suggestVersion;const result=await
 function profilesForSelected(){return S.profiles.filter(p=>p.labor_id===S.selected);}
 function renderEditor(){
  if(!S.selected||!S.editor)return;
- const l=S.labor[S.selected],e=S.editor,operation=l.operation;
- $('editorMode').textContent=S.editing>=0?`Editando item ${S.editing+1}`:'Materiais por unidade de serviço';
- $('editor').innerHTML=`<div class="editor-body ${movementClass(operation)}"><div class="operation-summary ${operation==='RETIRAR'?'retirar':''}">${opBadge(operation)} <strong>${operation==='RETIRAR'?'Retirada · materiais desativados':operation==='INSTALAR'?'Instalação · materiais instalados':'Execução · confira a movimentação'}</strong></div><h3 class="service-title"><span class="code">${esc(l.code||'Sem código')}</span> ${esc(l.description)}</h3><p class="subtle">${esc(l.scope)}</p>
- ${window.Training?.sourcePanel()||''}
- ${window.Book?.serviceSelector(e.point_id)||''}
- ${e.base_id?'<p class="notice cool">No book: '+esc(window.Book?.serviceName(e)||e.variant||l.description)+'</p>':''}
- <div class="stack-fields"><label>Quantidade de mão de obra<input id="laborQuantity" inputmode="decimal" value="${esc(e.quantity)}"></label><label>Variante / configuração<input id="variant" value="${esc(e.variant)}" maxlength="160" placeholder="Ex.: N1 · concreto · 15 kV"></label></div>
- <div class="mini-heading"><h3>Materiais deste serviço <span class="count">${e.materials.length}</span></h3><button id="allMaterials" class="secondary">+ Material</button></div>
+ const l=S.labor[S.selected],e=S.editor,operation=l.operation,node=$('editor');
+ const opened=new Set(node.dataset.entry===e.entry_id?[...node.querySelectorAll('details[open][data-editor-section]')].map(d=>d.dataset.editorSection):[]);
+ const open=name=>opened.has(name)?'open':'';
+ node.dataset.entry=e.entry_id;
+ const base=S.bases.find(b=>b.id===e.base_id),title=base?.kind==='structure'?window.Book?.serviceName(e):e.variant||l.description;
+ $('editorMode').textContent=S.editing>=0?'Em edição':'Novo serviço';
+ node.innerHTML=`<div class="editor-body ${movementClass(operation)}">
+ <div class="composition-heading"><div>${opBadge(operation)}<h3 class="service-title" title="${esc(title)}">${esc(title)}</h3></div><label class="labor-quantity">Quantidade<input id="laborQuantity" inputmode="decimal" value="${esc(e.quantity)}"></label></div>
+ <div class="mini-heading"><h3>Materiais <span class="count">${e.materials.length}</span></h3><button id="allMaterials" class="secondary">+ Material</button></div>
  <div id="editorRows">${editorRows()}</div>
- <label class="check-label"><input id="noMaterials" type="checkbox" ${e.no_materials?'checked':''}>Este serviço não movimenta materiais.</label>
- <p class="auto-memory-note">Alterações salvas automaticamente e identificadas pelo responsável.</p>
- <details class="composition-source" ${e.materials.length?'':'open'}><summary>Carregar composição da planilha</summary>${basePanel()}</details>
- <details class="composition-source"><summary>Buscar componentes pela descrição do serviço</summary><div class="family-grid">${S.groups.map((g,i)=>`<button class="family" data-family="${i}">${esc(g.name)} <span>${g.total}</span></button>`).join('')||'<p class="muted">Use + Material para buscar no catálogo.</p>'}</div><p class="subtle">Sugestões pela descrição. Confira modelo, unidade e quantidade.</p></details>
- <details class="composition-source"><summary>Descrição completa e observação</summary><p>${esc(l.detail)}</p><label>Observação da composição<input id="editorNote" value="${esc(e.note)}" maxlength="2000"></label></details>
- <label class="check-label"><input id="reviewed" type="checkbox" ${e.reviewed?'checked':''}>Conferi os materiais, quantidades e movimentações para esta obra.</label>
- <div class="editor-buttons"><button id="addService" class="primary">${S.editing>=0?'Aplicar alterações':'Adicionar ao ponto'}</button><button id="clearEditorChanges" class="secondary">Limpar alterações</button><button id="removeSelectedLabor" class="secondary remove-selected-labor">Remover mão de obra selecionada</button></div>
- <p class="subtle editor-actions-help">Limpar restaura ${S.editing>=0?'a composição já adicionada ao ponto':'a última composição carregada'}. Remover ${S.editing>=0?'exclui este serviço do ponto e dos totais':'descarta esta mão de obra em preparação'}.</p></div>`;
+ <label class="check-label" ${e.materials.length?'hidden':''}><input id="noMaterials" type="checkbox" ${e.no_materials?'checked':''}>Sem movimentação de materiais.</label>
+ <details class="composition-source editor-extra" data-editor-section="extra" ${open('extra')}><summary>Detalhes e configuração</summary>
+ <p class="subtle"><strong>${esc(l.code||'Sem código')}</strong> · ${esc(l.description)} · ${esc(l.scope)}</p>
+ ${window.Training?.sourcePanel()||''}${window.Book?.serviceSelector(e.point_id)||''}
+ <label>Variante / configuração<input id="variant" value="${esc(e.variant)}" maxlength="160" placeholder="Ex.: N1 · concreto · 15 kV"></label>
+ <label>Observação da composição<input id="editorNote" value="${esc(e.note)}" maxlength="2000"></label>
+ <details class="composition-source" data-editor-section="base" ${open('base')}><summary>Trocar composição da planilha</summary>${basePanel()}</details>
+ <details class="composition-source" data-editor-section="suggestions" ${open('suggestions')}><summary>Buscar componentes sugeridos</summary><div class="family-grid">${S.groups.map((g,i)=>`<button class="family" data-family="${i}">${esc(g.name)} <span>${g.total}</span></button>`).join('')||'<p class="muted">Use + Material para buscar no catálogo.</p>'}</div><p class="subtle">${esc(l.detail)}</p></details>
+ </details>
+ <label class="check-label"><input id="reviewed" type="checkbox" ${e.reviewed?'checked':''}>Materiais, quantidades e movimentos conferidos.</label>
+ <div class="editor-buttons"><button id="addService" class="primary">${S.editing>=0?'Aplicar alterações':'Adicionar ao ponto'}</button></div></div>`;
+ window.Workflow?.progress();
 }
 function editorRows(){
  if(!S.editor.materials.length)return '<p class="empty-table">Adicione um material ou carregue uma composição abaixo.</p>';
@@ -126,8 +131,11 @@ async function saveProfile(asNew=false){if(!S.editor.reviewed)throw Error('Marqu
 function movementClass(value){return value==='RETIRAR'||value==='desativado'?'movement-removed':value==='INSTALAR'||value==='instalado'?'movement-installed':'movement-neutral';}
 function renderServices(){
  const rows=window.Workflow?.services()||S.services.map((service,index)=>({service,index}));
- $('servicesCount').textContent=`${rows.length} neste filtro · ${S.services.length} na obra`;
- $('servicesTable').innerHTML=rows.map(({service:s,index:i})=>`<article class="point-service ${movementClass(s.operation)}"><div class="point-service-title"><div>${opBadge(s.operation)}<h3>${esc(window.Book?.serviceName(s)||s.description)}</h3><p class="subtle">${esc(s.code)} · ${esc(s.scope)} · ${s.reviewed?'Conferido':'Conferência pendente'}</p></div><div class="service-actions"><button data-edit-service="${i}">Editar</button><button data-remove-service="${i}">Remover</button></div></div><div class="point-service-fields"><label>Ponto${window.Book?.serviceSelect(s.point_id,i)||''}</label><label>Qtd. do serviço<input class="qty-input" inputmode="decimal" value="${esc(s.quantity)}" data-service-qty="${i}" aria-label="Quantidade do serviço ${i+1}"></label></div><div class="point-service-materials">${s.materials.map(m=>{const catalog=S.materials[m.material_id]||m;return `<div class="point-service-material ${movementClass(m.movement)}"><span>${esc(catalog.code)} · ${esc(catalog.description)}<small>${m.movement==='instalado'?'Instalado':'Desativado'}</small></span><strong>${esc(m.coefficient)} ${esc(m.unit||catalog.unit)} / serviço</strong></div>`;}).join('')||'<p class="muted">Sem movimentação de materiais.</p>'}</div></article>`).join('')||'<p class="empty-table">Os serviços deste ponto aparecerão aqui. Para conferir itens antigos, marque Mostrar serviços de todos os pontos.</p>';
+ const opened=new Set([...$('servicesTable').querySelectorAll('details[open][data-service-details]')].map(d=>d.dataset.serviceDetails));
+ $('servicesCount').textContent=`${rows.length} no filtro · ${S.services.length} na obra`;
+ $('servicesTable').innerHTML=rows.map(({service:s,index:i})=>{const key=s.entry_id||String(i);return `<article class="point-service ${movementClass(s.operation)}"><div class="point-service-title"><div>${opBadge(s.operation)}<h3>${esc(window.Book?.serviceName(s)||s.description)}</h3><p class="subtle">Qtd. ${esc(s.quantity)} · ${s.reviewed?'Conferido':'Conferência pendente'}</p></div><div class="service-actions"><button data-edit-service="${i}">Editar</button><button data-remove-service="${i}" aria-label="Remover serviço ${i+1}">Remover</button></div></div>
+ <details class="applied-service-details" data-service-details="${esc(key)}" ${opened.has(key)?'open':''}><summary>${s.materials.length} ${s.materials.length===1?'material':'materiais'} · Ver detalhes</summary>
+ <div class="point-service-fields"><label>Ponto${window.Book?.serviceSelect(s.point_id,i)||''}</label><label>Quantidade<input class="qty-input" inputmode="decimal" value="${esc(s.quantity)}" data-service-qty="${i}" aria-label="Quantidade do serviço ${i+1}"></label></div><div class="point-service-materials">${s.materials.map(m=>{const catalog=S.materials[m.material_id]||m;return `<div class="point-service-material ${movementClass(m.movement)}"><span>${esc(catalog.code)} · ${esc(catalog.description)}</span><strong>${esc(m.coefficient)} ${esc(m.unit||catalog.unit)} / serviço</strong></div>`;}).join('')||'<p class="muted">Sem movimentação de materiais.</p>'}</div></details></article>`;}).join('')||'<p class="empty-table">Nenhum serviço adicionado a este ponto.</p>';
  window.Book?.renderPointList();window.Workflow?.progress();
 }
 function materialTable(rows,trace=false){return rows.length?`<div class="table-wrap"><table><thead><tr><th>Material</th><th>Un.</th><th class="number">Qtd.</th></tr></thead><tbody>${rows.map(m=>`<tr><td><span class="code">${esc(m.code)}</span><br>${esc(m.description)}${trace?`<small>${esc(m.services.join(' / '))}</small>`:''}</td><td>${esc(m.unit)}</td><td class="number">${fmt(m.quantity)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="empty-table">Nenhum material lançado.</p>';}

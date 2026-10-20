@@ -21,20 +21,31 @@
   for(const id of ['workOrder','date','responsible','location'])$(id).required=true;
   metadata.insertAdjacentHTML('afterend','<div class="start-guide"><strong>Depois, trabalhe ponto a ponto.</strong><p>Adicione a foto de referência, escolha os serviços e confira os materiais ao lado dela. O book acompanha os lançamentos automaticamente.</p></div>');
   const workspace=$('pointServices');workspace.append(document.querySelector('.workflow'),document.querySelector('.work-items'));
+  const bookHeading=document.querySelector('#tab-book .page-heading');
+  bookHeading.querySelector('h1').textContent='Pontos e serviços';
+  bookHeading.querySelector('p:not(.eyebrow)').textContent='Use a foto como referência para lançar os serviços do ponto.';
+  bookHeading.insertAdjacentHTML('afterend',`<div id="pointStageActions" class="point-stage-actions"><div class="actions" role="group" aria-label="Ações da mão de obra selecionada"><button id="clearEditorChanges" class="secondary" disabled>Limpar alterações</button><button id="removeSelectedLabor" class="secondary remove-selected-labor" disabled>Remover mão de obra selecionada</button></div><div class="actions" id="pointViewActions"><details class="point-more-actions"><summary>Mais opções</summary><div id="pointMoreActions"></div></details></div></div>`);
+  $('pointViewActions').prepend($('previewBook'));
+  $('pointMoreActions').append($('previewMaterials'),$('clearDraft'));
+  bookHeading.querySelector('.actions').remove();
+  $('clearEditorChanges').onclick=run(()=>editorAction(clearEditorChanges));
+  $('removeSelectedLabor').onclick=run(()=>editorAction(removeSelectedLabor));
   const finder=document.createElement('details');finder.id='laborFinder';finder.className='card labor-finder';finder.open=true;
   const labor=document.querySelector('.labor-panel');labor.before(finder);finder.innerHTML='<summary>Buscar e adicionar mão de obra <span>código ou descrição</span></summary>';finder.append(labor);
   labor.querySelector('h2').textContent='Escolha a mão de obra';
   document.querySelector('.detail-panel h2').textContent='Mão de obra e materiais do ponto';
   document.querySelector('.work-items h2').textContent='Serviços do ponto';
-  document.querySelector('.work-items .section-heading').insertAdjacentHTML('afterend','<label class="check-label all-services"><input type="checkbox" id="allPointServices">Mostrar serviços de todos os pontos e os sem vínculo</label>');
+  document.querySelector('.work-items .section-heading').insertAdjacentHTML('afterend','<details class="services-filter"><summary>Filtros</summary><label class="check-label all-services"><input type="checkbox" id="allPointServices">Mostrar serviços de todos os pontos</label></details>');
   workspace.insertAdjacentHTML('afterbegin','<p id="activeServicePoint" class="active-service-point"></p><div class="movement-legend"><span class="movement-installed">+ Instalado</span><span class="movement-removed">− Desativado / retirado</span></div>');
   const summary=document.querySelector('.summary');$('tab-forms').querySelector('.page-heading').after(summary);
   summary.querySelector('h2').textContent='Totais da obra';
   summary.insertAdjacentHTML('beforebegin','<details class="card final-services"><summary>Conferir todas as mãos de obra</summary><div id="finalServices"></div></details>');
   $('tab-forms').querySelector('h1').textContent='Confira e finalize o fechamento';
   $('previewBook').textContent='Prévia do book';
-  $('previewBook').onclick=()=>{$('liveBookPreview').scrollIntoView({behavior:'smooth',block:'start'});refresh();};
-  main.insertAdjacentHTML('beforeend',`<aside id="liveBookPreview" class="card live-book-preview" aria-label="Pré-visualização automática do book"><div class="section-heading"><div><p class="eyebrow">ACOMPANHE O RESULTADO</p><h2>Prévia do book</h2></div><button id="pinBookPreview" class="secondary">Fixar ao lado</button></div><p id="livePreviewStatus" role="status">Carregando prévia…</p><p class="preview-hint">O serviço em edição entra no book ao clicar em Adicionar ao ponto ou Aplicar alterações.</p><div class="preview-controls"><button id="previewPrevious" class="secondary" aria-label="Página anterior da prévia">←</button><label>Página<select id="previewPage"></select></label><button id="previewNext" class="secondary" aria-label="Próxima página da prévia">→</button><button id="refreshBookPreview" class="text-button">Atualizar</button></div><iframe id="liveBookFrame" title="Prévia do book durante o preenchimento" sandbox="allow-same-origin"></iframe><p id="previewError" class="notice" hidden></p></aside>`);
+  $('previewBook').className='secondary';$('previewBook').setAttribute('aria-controls','liveBookPreview');$('previewBook').setAttribute('aria-expanded','false');
+  $('previewBook').onclick=()=>{const preview=$('liveBookPreview');preview.open=!preview.open;if(preview.open)preview.scrollIntoView({behavior:'smooth',block:'start'});};
+  main.insertAdjacentHTML('beforeend',`<details id="liveBookPreview" class="card live-book-preview" aria-label="Pré-visualização automática do book"><summary>Prévia do book</summary><div class="section-heading"><button id="pinBookPreview" class="secondary">Fixar ao lado</button></div><p id="livePreviewStatus" role="status">Carregando prévia…</p><p class="preview-hint">O serviço entra na prévia após Adicionar ao ponto ou Aplicar alterações.</p><div class="preview-controls"><button id="previewPrevious" class="secondary" aria-label="Página anterior da prévia">←</button><label>Página<select id="previewPage"></select></label><button id="previewNext" class="secondary" aria-label="Próxima página da prévia">→</button><button id="refreshBookPreview" class="text-button">Atualizar</button></div><iframe id="liveBookFrame" title="Prévia do book durante o preenchimento" sandbox="allow-same-origin"></iframe><p id="previewError" class="notice" hidden></p></details>`);
+  $('liveBookPreview').addEventListener('toggle',()=>{const open=$('liveBookPreview').open;$('previewBook').setAttribute('aria-expanded',String(open));$('previewBook').textContent=open?'Ocultar prévia':'Prévia do book';if(open){refresh();requestAnimationFrame(fitPreview);}});
   document.body.insertAdjacentHTML('beforeend','<dialog id="photoLightbox"><div class="dialog-heading"><h2>Foto de referência</h2><button id="closePhotoLightbox" class="secondary">Fechar</button></div><img id="referencePhoto" alt="Foto de referência ampliada"></dialog>');
   $('closePhotoLightbox').onclick=()=>$('photoLightbox').close();
   const enlarge=ev=>{const target=ev.target.closest('[data-photo-enlarge]');if(!target)return;if(ev.type==='keydown'&&!['Enter',' '].includes(ev.key))return;ev.preventDefault();$('referencePhoto').src=target.src;$('referencePhoto').alt=target.alt;$('photoLightbox').showModal();};
@@ -61,6 +72,8 @@
   for(const [i,s] of stages.entries()){const node=document.querySelector(`[data-stage="${s[0]}"]`);node.classList.toggle('complete',!!flags[i]);node.classList.toggle('current',current===s[0]);if(current===s[0])node.setAttribute('aria-current','step');else node.removeAttribute('aria-current');node.querySelector('em').textContent=flags[i]?'Preenchido':current===s[0]?'Em preenchimento':'A preencher';}
   const p=points.find(p=>p.id===window.Book.activeId());$('activeServicePoint').textContent=p?'Lançamentos do ponto '+p.number:'Cadastre um ponto para iniciar os lançamentos.';
   document.querySelector('#pointServices .workflow').hidden=!p;
+  document.querySelector('#pointServices .detail-panel').hidden=!S.editor;
+  for(const id of ['clearEditorChanges','removeSelectedLabor']){$(id).disabled=!(S.selected&&S.editor);$(id).title=S.editor?(id==='clearEditorChanges'?'Restaurar a composição da mão de obra aberta':'Remover somente a mão de obra aberta'):'Selecione ou edite uma mão de obra para usar esta ação';}
   if($('finalServices'))$('finalServices').innerHTML=S.services.length?S.services.map(s=>`<div class="final-service ${movementClass(s.operation)}"><strong>${esc(window.Book.serviceName(s))}</strong><span>${esc(s.operation)} · Qtd. ${esc(s.quantity)} · Ponto ${esc(points.find(p=>p.id===s.point_id)?.number||'não vinculado')}</span></div>`).join(''):'<p class="empty-table">Ainda não há serviços adicionados.</p>';
  }
  function movementClass(value){return value==='RETIRAR'||value==='desativado'?'movement-removed':value==='INSTALAR'||value==='instalado'?'movement-installed':'movement-neutral';}
@@ -79,7 +92,7 @@
   $('previewPrevious').disabled=page<=0;$('previewNext').disabled=page>=pages-1;
  }
  async function refresh(){
-  if(!ready||!S.token||($('liveBookPreview').hidden&&(!popup||popup.closed)))return;
+  if(!ready||!S.token||(($('liveBookPreview').hidden||!$('liveBookPreview').open)&&(!popup||popup.closed)))return;
   if(running)return;running=true;const serial=revision;
   $('livePreviewStatus').textContent='Atualizando prévia…';
   try{

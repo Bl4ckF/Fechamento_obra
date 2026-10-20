@@ -1,26 +1,35 @@
-ATUALIZAÇÃO 1.3.3 — requer o programa completo 1.3.2 já instalado
+ATUALIZAÇÃO 1.3.4 — requer o programa completo 1.3.2 ou 1.3.3 já instalado
 
 1. Feche o aplicativo e sua janela do Python.
-2. Extraia Fechamento_Obras_Engelmig_Atualizacao_v1_3_3.zip.
+2. Extraia Fechamento_Obras_Engelmig_Atualizacao_v1_3_4.zip.
 3. Copie o CONTEÚDO da pasta Fechamento_Obras_Engelmig extraída para
    a pasta atual do programa, onde já existe INICIAR.bat.
 4. Aceite substituir os arquivos de mesmo nome. Não exclua a pasta antiga.
-5. Execute VERIFICAR_E_INICIAR.bat normalmente. Confira v1.3.3 na tela.
+5. Execute VERIFICAR_E_INICIAR.bat normalmente. Confira v1.3.4 na tela.
 
 Este ZIP contém apenas os arquivos da atualização. Seus registros, fotos,
 croquis, configurações e materiais permanecem na pasta atual do programa.
 Ele não deve ser executado isoladamente como uma instalação nova.
 
-NO EDITOR DA MÃO DE OBRA
+NA ETAPA PONTOS E SERVIÇOS
+• Os botões ficam no topo de Pontos e serviços. Selecione ou edite uma
+  mão de obra para habilitar Limpar alterações e Remover mão de obra.
 • Limpar alterações: restaura a última composição carregada. Se o serviço
   já foi adicionado, restaura a composição aplicada ao ponto. Para descartar
   toda a seleção, use Remover mão de obra selecionada.
 • Remover mão de obra selecionada: exclui apenas esse lançamento do ponto
   e dos totais. Se ainda não foi adicionado, descarta a seleção em preparação.
 • As ações são salvas automaticamente. O histórico anterior é preservado.
-• Limpar rascunho atual, na primeira etapa, continua limpando o fechamento
+• Limpar rascunho atual, em Mais opções, continua limpando o fechamento
   inteiro em edição, mediante a confirmação já existente.
 
+LAYOUT SIMPLIFICADO
+• Uma foto de referência por vez; use as setas para navegar.
+• Legendas, observações e dados da rede ficam em seções recolhidas.
+• Materiais dos serviços adicionados aparecem ao abrir Ver detalhes.
+• Detalhes e configuração reúne as opções avançadas da composição.
+• Prévia do book abre a visualização automática quando precisar.
+
 Para oferecer este pacote pelo botão de atualização do aplicativo,
-publique uma Release v1.3.3 no GitHub com este ZIP anexado.
+publique uma Release v1.3.4 no GitHub com este ZIP anexado.
 Veja PUBLICAR_RELEASE.txt para os comandos e as próximas versões.
