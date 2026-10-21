@@ -8,8 +8,7 @@ from geo import coordinate_for_book
 from engine import LABOR, structure_description
 from pricing import service_price, line_total, money
 
-DEVELOPER_CREDIT = 'Desenvolvido por Matheus Alves Araújo'
-DEVELOPER_EMAIL = 'matheusalvesaraujo540@gmail.com'
+# Os créditos do desenvolvedor aparecem somente na interface do aplicativo.
 
 def e(x):return escape(str(x or ''),quote=True)
 def n(x):return format(Decimal(str(x)),'f').replace('.',',')
@@ -141,7 +140,7 @@ def document_html(job,pages,title,pending,preview=False):
     html+='<nav class="print-toolbar"><strong>'+e(title)+' '+e(job['work_order'])+'</strong><button id="printBook">Imprimir / salvar PDF</button><span>'+str(len(pages))+' páginas</span></nav>'
     if pending:html+='<div class="print-alert">RASCUNHO — '+e(' '.join(pending))+'</div>'
     for index,(body,klass) in enumerate(pages):
-        html+=f'<article class="book-page {klass}">{body}<div class="developer-watermark">{e(DEVELOPER_CREDIT)}</div><footer><img src="/assets/rodape.png" alt="Energisa Mato Grosso do Sul"><small class="developer-credit">{e(DEVELOPER_CREDIT)}<br>{e(DEVELOPER_EMAIL)}</small><span>'+('RASCUNHO · ' if pending else '')+f'Obra {e(short(job["work_order"],40))} · {index+1}/{len(pages)}</span></footer></article>'
+        html+=f'<article class="book-page {klass}">{body}<footer><img src="/assets/rodape.png" alt="Energisa Mato Grosso do Sul"><span>'+('RASCUNHO · ' if pending else '')+f'Obra {e(short(job["work_order"],40))} · {index+1}/{len(pages)}</span></footer></article>'
     return (html+('' if preview else '<script src="/book-print.js"></script>')+'</body></html>').encode('utf-8')
 
 

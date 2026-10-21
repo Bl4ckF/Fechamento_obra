@@ -39,6 +39,22 @@ class JobFolderTests(unittest.TestCase):
         self.assertNotEqual(first['folder'],second['folder']);self.assertEqual(second['source_job_id'],first['id'])
         self.assertEqual((Path(first['folder'])/'registro.json').read_bytes(),original)
         self.assertEqual(len(app.records('jobs')),2)
+    def test_removes_136_credit_from_archived_html_without_changing_job_or_photos(self):
+        job=app.save_job(self.payload());folder=Path(job['folder'])
+        original=(folder/'registro.json').read_bytes()
+        photo_files={p:p.read_bytes() for p in (folder/'fotos').rglob('*') if p.is_file()}
+        reports=('book.html','mao_de_obra_e_materiais.html')
+        originals={}
+        for name in reports:
+            report=folder/name;html=report.read_text()
+            self.assertNotIn('class="developer-watermark"',html)
+            self.assertNotIn('class="developer-credit"',html)
+            originals[name]=html
+            report.write_text(html.replace('</article>','<div class="developer-watermark">Desenvolvido por Matheus Alves Araújo</div><small class="developer-credit">Desenvolvido por Matheus Alves Araújo<br>matheusalvesaraujo540@gmail.com</small></article>'),encoding='utf-8')
+        app.ensure_job_folder(job)
+        for name,html in originals.items():self.assertEqual((folder/name).read_text(),html)
+        self.assertEqual((folder/'registro.json').read_bytes(),original)
+        for p,data in photo_files.items():self.assertEqual(p.read_bytes(),data)
     def test_open_folder_only_uses_saved_record_and_allowed_section(self):
         job=app.save_job(self.payload())
         with patch('job_files.open_folder',return_value=True) as opened:

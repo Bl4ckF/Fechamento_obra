@@ -4,6 +4,6 @@
 .labor-total{display:flex;justify-content:space-between;gap:6mm;border-top:2px solid #173749;background:#f3f5f7;padding:3mm;margin-top:3mm;font-size:10pt}.price-note{font-size:7.5pt;line-height:1.4;margin:2mm 0}
 
 td.num{padding-left:1.5mm;padding-right:1.5mm;font-variant-numeric:tabular-nums}
-.developer-watermark{position:absolute;right:3mm;top:100mm;writing-mode:vertical-rl;font-size:6.5pt;color:#78838b;opacity:.65;pointer-events:none;user-select:none}
-footer .developer-credit{font-size:6pt;line-height:1.5;text-align:center;max-width:78mm;flex:1;padding:0 2mm;color:#59636b}
-footer>span{max-width:65mm;text-align:right;overflow-wrap:anywhere}
+
+/* Compatibilidade com HTMLs gerados pela versão 1.3.6. */
+.developer-watermark,.developer-credit{display:none!important}

@@ -1,12 +1,12 @@
-PUBLICAR v1.3.6 — ETAPA 1
+PUBLICAR v1.3.7 — ETAPA 1
 
 1. Aplique este pacote na pasta do repositório com a versão 1.3.5.
 2. Confira git status e git diff antes de adicionar os arquivos alterados.
    Inclua diagnostics.py e web/diagnostics.js. Não adicione dados, diagnósticos,
    backups, fotos ou credenciais ao commit.
-3. Crie o commit e a tag v1.3.6 e envie para seu repositório.
-4. Crie uma Release v1.3.6 no GitHub e anexe:
-   Fechamento_Obras_Engelmig_Atualizacao_v1_3_6.zip
+3. Crie o commit e a tag v1.3.7 e envie para seu repositório.
+4. Crie uma Release v1.3.7 no GitHub e anexe:
+   Fechamento_Obras_Engelmig_Atualizacao_v1_3_7.zip
    Marque como Latest, sem Pre-release. Só a tag não fornece o pacote pequeno.
 5. Nos computadores com v1.3.5, abra o sino e use Atualizar agora.
 
@@ -15,7 +15,7 @@ continuam usando o repositório público; o acesso privado será tratado na etap
 
 GERAR NOVAMENTE
 Use uma cópia completa da v1.3.5 como base:
-python tools/criar_atualizacao.py --base "C:\Backups\Fechamento_Obras_Engelmig_v1_3_5.zip" --saida "C:\Atualizacoes\Fechamento_Obras_Engelmig_Atualizacao_v1_3_6.zip"
+python tools/criar_atualizacao.py --base "C:\Backups\Fechamento_Obras_Engelmig_v1_3_5.zip" --saida "C:\Atualizacoes\Fechamento_Obras_Engelmig_Atualizacao_v1_3_7.zip"
 
 Validação da etapa: testes de backend, editor de croqui, interface Chromium e
 instalação incremental sobre v1.3.5. A reinicialização nativa no Windows deve

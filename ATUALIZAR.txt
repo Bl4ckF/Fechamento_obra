@@ -1,4 +1,4 @@
-ATUALIZAÇÃO v1.3.6 — ETAPA 1
+ATUALIZAÇÃO v1.3.7 — ETAPA 1
 
 Base necessária: instalação completa e funcional da v1.3.5.
 Este ZIP contém somente arquivos alterados e os arquivos exigidos pelo atualizador.
@@ -9,10 +9,10 @@ INSTALAÇÃO MANUAL
 3. Abra o ZIP e copie o conteúdo de Fechamento_Obras_Engelmig para a pasta
    onde está o INICIAR.bat da instalação atual. Aceite substituir os arquivos.
 4. Execute INICIAR.bat normalmente, sem executar como administrador.
-5. Confira v1.3.6 no menu lateral. Se a aba antiga continuar aberta, recarregue-a.
+5. Confira v1.3.7 no menu lateral. Se a aba antiga continuar aberta, recarregue-a.
 
 INSTALAÇÃO PELO SINO
-Depois de publicar a Release v1.3.6 com este ZIP anexado, use o sino >
+Depois de publicar a Release v1.3.7 com este ZIP anexado, use o sino >
 Atualizar agora. O atualizador da v1.3.5 preserva dados e reinicia o programa.
 A pasta instalada precisa permitir gravação pelo usuário do Windows.
 
@@ -20,14 +20,16 @@ NESTA ETAPA
 - Prévia leve ao digitar no croqui ampliado; exportação continua em alta resolução.
 - Validação de origem das requisições e proteção contra envio do endereço de origem.
 - Botão Baixar diagnóstico e registros técnicos locais limitados a cerca de 3 MB.
-- Créditos de Matheus Alves Araújo e contato no aplicativo e nos relatórios gerados.
+- Créditos de Matheus Alves Araújo e contato somente no aplicativo.
+- Books e relatórios de materiais sem marca d’água ou créditos do desenvolvedor.
 
 Os diagnósticos ficam em dados/diagnosticos; o arquivo baixado contém os últimos
 200 eventos, versão, Python e sistema. Não inclui texto das obras, fotos, senhas,
 tokens nem mensagens completas de exceções.
 
-Relatórios HTML já arquivados e PDFs já exportados conservam seu conteúdo.
-Abra o book pelo programa para gerar novamente com os créditos novos.
+Ao abrir uma pasta de registro pelo programa, os créditos da v1.3.6 são removidos
+dos relatórios HTML arquivados. PDFs já exportados precisam ser gerados novamente.
+Este pacote também pode ser aplicado sobre a v1.3.6.
 
 PRÓXIMAS ETAPAS
 Login, cargos, autorização de computadores, acesso ao repositório privado,

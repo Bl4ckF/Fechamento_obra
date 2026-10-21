@@ -54,6 +54,14 @@ def write_files(job, data_dir, web_root, book_report, materials_report, csv_repo
     folder = root / relative_path(job)
     marker = folder / 'registro.json'
     if marker.is_file() and (folder / 'book.html').is_file() and (folder / 'fotos/index.json').is_file():
+        # Remove somente a identificação inserida pela v1.3.6 nos HTMLs arquivados.
+        for name in ('book.html', 'mao_de_obra_e_materiais.html'):
+            report = folder / name
+            if report.is_file():
+                html = report.read_text(encoding='utf-8')
+                cleaned = re.sub(r'<div class="developer-watermark">.*?</div>|<small class="developer-credit">.*?</small>', '', html, flags=re.DOTALL)
+                if cleaned != html:
+                    atomic(report, cleaned)
         return folder
     folder.mkdir(parents=True, exist_ok=True)
     (folder / 'fotos').mkdir(exist_ok=True)

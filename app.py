@@ -31,7 +31,7 @@ import diagnostics
 from records_sync import RecordSync
 
 APP_ID='engelmig-fechamento-v1'
-VERSION='1.3.6'
+VERSION='1.3.7'
 LEARNING_LOCK=threading.RLock()
 TOKEN=secrets.token_urlsafe(32)
 INSTANCE_ID=uuid.uuid4().hex

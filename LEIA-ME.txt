@@ -1,4 +1,4 @@
-VERSÃO 1.3.6 — ETAPA 1
+VERSÃO 1.3.7 — ETAPA 1
 Leia ATUALIZAR.txt para mudanças, instalação e limites desta etapa.
 Desenvolvido por Matheus Alves Araújo
 Contato: matheusalvesaraujo540@gmail.com
