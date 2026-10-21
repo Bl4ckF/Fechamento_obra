@@ -129,6 +129,47 @@ class StorageTests(unittest.TestCase):
         self.assertIn('instalado'.upper(),text)
 
 class HTTPTests(unittest.TestCase):
+    def test_rejects_foreign_origin_even_with_token(self):
+        for headers in ({'Origin':'https://outside.example'}, {'Origin':'null'},
+                        {'Sec-Fetch-Site':'cross-site'}):
+            for method,path,body in [('GET','/api/bootstrap',None),
+                                     ('POST','/api/diagnostics',b'{}')]:
+                request=Request(self.base+path,data=body,method=method,
+                                headers={**headers,'X-App-Token':app.TOKEN})
+                with self.assertRaises(HTTPError) as denied:urlopen(request)
+                self.assertEqual(denied.exception.code,403)
+        with urlopen(Request(self.base+'/api/health',headers={'Origin':self.base,'Sec-Fetch-Site':'same-origin'})) as response:
+            self.assertEqual(json.load(response)['version'],app.VERSION)
+            self.assertEqual(response.headers['Referrer-Policy'],'no-referrer')
+            self.assertNotIn('Python',response.headers['Server'])
+
+    def test_diagnostics_authentication_validation_and_no_sensitive_messages(self):
+        from unittest.mock import patch
+        def post(data,token=app.TOKEN,path='/api/diagnostics'):
+            return urlopen(Request(self.base+path,data=json.dumps(data).encode(),headers={'X-App-Token':token},method='POST'))
+        with self.assertRaises(HTTPError) as denied:post({},token='wrong')
+        self.assertEqual(denied.exception.code,403)
+        with post({'category':'javascript_error','file':'drawing.js','line':310,
+                   'message':'private work content'},path='/api/diagnostics-event') as response:
+            self.assertTrue(json.load(response)['id'])
+        for data in [{'category':'unknown'}, {'category':'javascript_error','file':'../secret.js'},
+                     {'category':'javascript_error','line':True}]:
+            with self.assertRaises(HTTPError) as invalid:post(data,path='/api/diagnostics-event')
+            self.assertEqual(invalid.exception.code,400)
+        with patch('app.records',side_effect=RuntimeError('ghp_private_token_and_work_content')):
+            with self.assertRaises(HTTPError) as failed:urlopen(self.base+'/api/jobs')
+            self.assertEqual(failed.exception.code,500)
+            error=json.loads(failed.exception.read())
+            self.assertIn('Código:',error['error'])
+            self.assertNotIn('ghp_private',error['error'])
+        with post({}) as response:
+            payload=json.load(response)
+        text=json.dumps(payload)
+        self.assertEqual(payload['version'],app.VERSION)
+        self.assertTrue(any(e.get('type')=='RuntimeError' for e in payload['events']))
+        for value in ['ghp_private_token_and_work_content','private work content',app.TOKEN]:
+            self.assertNotIn(value,text)
+
     def test_repository_link_saves_without_network_and_check_is_read_only(self):
         from unittest.mock import patch
         previous=app.settings()

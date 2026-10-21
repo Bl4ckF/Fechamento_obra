@@ -210,6 +210,7 @@ const type=text=>{node().focus();node().textContent=text;node().oninput();};
  delete env.window.requestAnimationFrame;
  // Digitação salva o documento imediatamente; PNG antigo não entra em um ciclo de exportações.
  type('EDIÇÃO A');const firstDoc=changed;assert.equal(firstDoc.objects[0].text,'EDIÇÃO A');assert.ok([...timers.values()].some(t=>t.delay===3000));
+ assert.equal(display.width,1800,'Typing at high zoom must not redraw 24 million pixels per key');
  await drawing.flush({automatic:true});assert.equal(images.length,initialImages,'No PNG while the user is typing');
  const png=env.window.CroquiRender.png;let releaseImage,pngCalls=0;
  env.window.CroquiRender.png=async(...args)=>{pngCalls++;if(pngCalls===1)await new Promise(resolve=>releaseImage=resolve);return png(...args);};
@@ -217,6 +218,7 @@ const type=text=>{node().focus();node().textContent=text;node().oninput();};
  type('EDIÇÃO B');assert.equal(changed.pdf_texts,firstDoc.pdf_texts);assert.equal(changed.pdf_lines,firstDoc.pdf_lines,'Autosave snapshots share immutable source geometry');assert.equal(firstDoc.objects[0].text,'EDIÇÃO A');
  releaseImage();await automatic;assert.equal(pngCalls,1,'Automatic export waits for another idle period');assert.equal(images.length,initialImages,'An obsolete bitmap is not uploaded');
  await drawing.flush();assert.equal(images.at(-1).doc.objects[0].text,'EDIÇÃO B');assert.equal(images.at(-1).width,6000);assert.equal(images.at(-1).height,4000,'Explicit save always includes the latest full-quality edit');
+ node().blur();assert.equal(display.width,6000,'Leaving inline editing restores full preview sharpness');
  type('EDIÇÃO RECUPERADA');const recovered=JSON.parse(JSON.stringify(changed)),imagesBeforeRestore=images.length;
  drawing.load(null);drawing.load(recovered,recovered.background_ref,true);await drawing.flush();
  assert.equal(images.length,imagesBeforeRestore+1);assert.equal(images.at(-1).doc.objects[0].text,'EDIÇÃO RECUPERADA','An edit saved before PNG generation is rebuilt after reopening');

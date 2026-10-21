@@ -307,7 +307,8 @@
  function draw(){
   if(!ctx)return;
   const preview=transformPreview||textPreview||linePreview||symbolPreview||model.doc,fast=interacting();let displayed=preview;
-  const resolution=Math.min(fast||navigating?1.5:5,Math.max(1,Math.ceil(viewScale*(window.devicePixelRatio||1)*2)/2));if(canvas.width!==Math.round(1200*resolution)||canvas.height!==Math.round(800*resolution)){canvas.width=Math.round(1200*resolution);canvas.height=Math.round(800*resolution);}
+  // A digitação também usa prévia leve. A saída PNG/PDF mantém a resolução original.
+  const resolution=Math.min(fast||navigating||active?1.5:5,Math.max(1,Math.ceil(viewScale*(window.devicePixelRatio||1)*2)/2));if(canvas.width!==Math.round(1200*resolution)||canvas.height!==Math.round(800*resolution)){canvas.width=Math.round(1200*resolution);canvas.height=Math.round(800*resolution);}
   if(active){displayed=previewDoc(displayed,active);const source=sourceList().find(t=>t.id===active);if(source){let o=displayed.objects.find(o=>o.id===active);if(!o){o=window.PDFText.editable(source);displayed.objects.push(o);}o.text='';}}
   ctx.save();ctx.scale(canvas.width/1200,canvas.height/800);ctx.imageSmoothingQuality='high';render(ctx,displayed,(selectedSymbol(displayed)||selectedLine(displayed))?selected:'');ctx.restore();updateTextLayer(preview,fast);updateSymbolLayer(displayed,fast);updateLineLayer(displayed,fast);updateTransformHandles(preview);el('dUndo').disabled=!model.undoStack.length;el('dRedo').disabled=!model.redoStack.length;
   el('dDelete').disabled=!sourceList().some(t=>t.id===selected);el('dRestoreText').disabled=!model.doc.objects.some(o=>o.id===selected&&o.pdf_text_id);el('dClear').disabled=!model.doc.objects.length;

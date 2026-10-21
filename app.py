@@ -27,10 +27,11 @@ from symbols import clean_symbol
 import updates
 import learning
 import job_files
+import diagnostics
 from records_sync import RecordSync
 
 APP_ID='engelmig-fechamento-v1'
-VERSION='1.3.5'
+VERSION='1.3.6'
 LEARNING_LOCK=threading.RLock()
 TOKEN=secrets.token_urlsafe(32)
 INSTANCE_ID=uuid.uuid4().hex
@@ -376,20 +377,28 @@ def restore(payload):
     return result
 
 class Handler(BaseHTTPRequestHandler):
+    server_version='FechamentoLocal'
+    sys_version=''
     def log_message(self,fmt,*args): pass
     def send(self,data,status=200,kind='application/json; charset=utf-8',filename=None):
         if not isinstance(data,bytes): data=json.dumps(data,ensure_ascii=False).encode('utf-8')
         self.send_response(status); self.send_header('Content-Type',kind)
         self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store')
         self.send_header('X-Content-Type-Options','nosniff')
+        self.send_header('Referrer-Policy','no-referrer')
         ancestors="'self'" if urlparse(self.path).path=='/map_v11.html' else "'none'"
         self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data: blob:; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self'; frame-src 'self'; frame-ancestors "+ancestors+"; base-uri 'none'; form-action 'self'")
         if filename: self.send_header('Content-Disposition',f'attachment; filename="{filename}"')
         self.end_headers();self.wfile.write(data)
     def valid_host(self):
         return self.headers.get('Host','') in {f'127.0.0.1:{self.server.server_port}',f'localhost:{self.server.server_port}'}
+    def valid_origin(self):
+        origin=self.headers.get('Origin')
+        return self.headers.get('Sec-Fetch-Site','')!='cross-site' and (
+            origin is None or origin=='http://'+self.headers.get('Host',''))
     def do_GET(self):
         if not self.valid_host(): return self.send({'error':'Host inválido.'},403)
+        if not self.valid_origin(): return self.send({'error':'Abra o programa diretamente pelo iniciador.'},403)
         path=urlparse(self.path); q=parse_qs(path.query)
         try:
             if path.path=='/api/health': return self.send({'app':APP_ID,'version':VERSION,'instance_id':INSTANCE_ID})
@@ -437,16 +446,21 @@ class Handler(BaseHTTPRequestHandler):
             if web not in file.parents or not file.is_file() or file.suffix not in kinds:return self.send({'error':'Não encontrado.'},404)
             return self.send(file.read_bytes(),kind=kinds[file.suffix])
         except (ValueError,KeyError) as exc: self.send({'error':str(exc)},400)
-        except Exception:
-            import traceback;traceback.print_exc(); self.send({'error':'Falha ao ler os dados. Consulte a janela do programa.'},500)
+        except Exception as exc:
+            ident=diagnostics.record(DATA_DIR,'server_get',exc)
+            self.send({'error':'Falha ao ler os dados. Baixe o diagnóstico para suporte. Código: '+ident},500)
     def do_POST(self):
-        if not self.valid_host() or self.headers.get('X-App-Token')!=TOKEN: return self.send({'error':'Recarregue a página para continuar.'},403)
+        if not self.valid_host() or not self.valid_origin() or self.headers.get('X-App-Token')!=TOKEN: return self.send({'error':'Recarregue a página para continuar.'},403)
         try:
             size=int(self.headers.get('Content-Length','0'))
-            limit=300_000_000 if self.path in ('/api/restore','/api/learning/import') else 71_000_000 if self.path=='/api/project-pdf' else 44_000_000 if self.path=='/api/media' else 25_000_000
+            limit=4096 if self.path in ('/api/diagnostics','/api/diagnostics-event') else 300_000_000 if self.path in ('/api/restore','/api/learning/import') else 71_000_000 if self.path=='/api/project-pdf' else 44_000_000 if self.path=='/api/media' else 25_000_000
             if not 0<size<=limit: raise ValueError('Arquivo ou requisição fora do limite permitido.')
             data=json.loads(self.rfile.read(size).decode('utf-8'))
             if not isinstance(data,dict): raise ValueError('Dados inválidos.')
+            if self.path=='/api/diagnostics':return self.send(diagnostics.report(DATA_DIR,VERSION),filename='diagnostico_fechamento.json')
+            if self.path=='/api/diagnostics-event':
+                category,client=diagnostics.client_event(data)
+                return self.send({'id':diagnostics.record(DATA_DIR,category,client=client)})
             if self.path=='/api/media':return self.send(put_media(data,DATA_DIR/'media'))
             if self.path=='/api/project-pdf':return self.send(put_pdf(data,DATA_DIR/'media'))
             if self.path=='/api/media-check':
@@ -507,8 +521,9 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/restore': return self.send(restore(data))
             return self.send({'error':'Não encontrado.'},404)
         except (ValueError,KeyError,TypeError,AttributeError) as exc: self.send({'error':str(exc)},400)
-        except Exception:
-            import traceback; traceback.print_exc(); self.send({'error':'Não foi possível salvar. Verifique a pasta dados e a janela do programa.'},500)
+        except Exception as exc:
+            ident=diagnostics.record(DATA_DIR,'server_post',exc)
+            self.send({'error':'Não foi possível salvar. Baixe o diagnóstico para suporte. Código: '+ident},500)
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8766);parser.add_argument('--no-browser',action='store_true');parser.add_argument('--reuse-port',action='store_true')
