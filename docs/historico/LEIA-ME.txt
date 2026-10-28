@@ -1,0 +1,27 @@
+﻿ORGANIZADOR DO PROJETO ENGELMIG - WINDOWS 10/11 64 BITS
+
+1. Extraia este ZIP.
+2. Feche o programa de fechamento de obras.
+3. Abra Organizar_Projeto_Engelmig.exe normalmente, sem administrador.
+4. Cole o caminho da pasta que contem app.py e INICIAR.bat, se solicitado.
+5. Confira a lista. Digite ORGANIZAR para confirmar, ou Enter para cancelar.
+
+O executavel pode ficar dentro ou fora da pasta do projeto. Antes de mover qualquer arquivo, cria um backup dos arquivos envolvidos ao lado da pasta do projeto e confere o conteudo das copias. Se nao puder criar o backup, nao move nada. Essa copia nao e um backup completo das obras.
+
+ESTRUTURA
+- docs/: comandos Git e documentacao de seguranca.
+- docs/historico/: manuais antigos da raiz.
+- tools/publicacao/: BAT e PS1 de geracao de chave que tenham sido extraidos na raiz. O par e movido junto, preservando seu funcionamento.
+- Os arquivos ja organizados sao preservados. Destinos existentes nunca sao sobrescritos. Executar novamente nao duplica os arquivos.
+
+IMPORTANTE
+Nao exclui arquivos, nao instala nada, nao altera permissoes nem politicas, nao usa Python ou PowerShell, nao acessa a internet e nao modifica o GitHub. Nao executa os scripts que organiza. Nao gera nem move chaves privadas.
+
+Modulos Python, iniciadores, data/, web/, fontes/, modelos/, tests/, dados/ e runtime/ permanecem nos caminhos existentes. Mover esses componentes exige uma atualizacao integrada do aplicativo; mover apenas as pastas quebraria o funcionamento.
+
+Links e juncoes sao recusados para evitar movimentacoes fora do projeto. Arquivos apenas online do OneDrive podem nao ser considerados arquivos locais normais. Se nada for encontrado, confira se escolheu a pasta correta e se os arquivos estao disponiveis localmente.
+
+Em falha durante as movimentacoes, tenta desfazer o que ja moveu e informa o backup para recuperacao manual. Pastas vazias criadas podem permanecer. Para recuperar manualmente, feche o programa e copie os arquivos do backup para a raiz original; confira antes de substituir alteracoes posteriores.
+
+VALIDACAO
+Compilado como executavel Windows x64 com avisos de compilacao tratados como erros. Formato e dependencias conferidos. Este ambiente nao possui Windows; a execucao real e o comportamento do antivirus ainda nao foram validados. Teste primeiro em uma copia da pasta do projeto. O executavel nao tem assinatura Authenticode; se a politica da empresa bloquear, solicite avaliacao ao TI.

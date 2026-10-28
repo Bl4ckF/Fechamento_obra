@@ -1,0 +1,24 @@
+V1.3.8 — TRANSIÇÃO PARA ATUALIZAÇÕES ASSINADAS
+
+Esta é uma atualização cumulativa para uma instalação completa v1.3.5, v1.3.6 ou v1.3.7. O ZIP não contém todos os catálogos e bibliotecas de uma instalação nova.
+
+ANTES DE PUBLICAR
+1. Extraia o kit de publicação no computador que gerou a chave privada.
+2. Execute ASSINAR_E_VALIDAR_v1.3.8.bat. Ele assina o ZIP com a chave local e verifica a assinatura com o mesmo código Windows CNG que será usado pelo aplicativo. Não altera a política permanente do PowerShell. Recusa políticas explícitas incompatíveis.
+3. Se o BAT não concluir a validação, não publique. Envie o erro; não envie a chave privada.
+4. Teste a instalação numa cópia da pasta do programa (app fechado), abrindo o aplicativo e conferindo obras e materiais existentes. Reinício automático real ainda requer teste no Windows.
+5. Publique uma Release v1.3.8 e anexe SOMENTE o ZIP de atualização e o arquivo de mesmo nome terminado em .zip.sig.json. Não anexe o kit externo como atualização.
+
+Os computadores com v1.3.5–v1.3.7 instalam a versão de transição pelo mecanismo antigo. A exigência de assinatura começa nas atualizações posteriores. Todos precisam receber esta transição antes de depender dessa proteção.
+
+O novo campo Repositório dos materiais é opcional. Vazio mantém o repositório atual. Criar outro repositório e migrar o histórico são operações separadas, ainda não realizadas.
+
+A cópia de segurança do atualizador cobre os arquivos do programa substituídos e permite restauração quando a instalação falha. Preserve também seu backup das obras; esta etapa não cria backup externo dos dados nem garante recuperação após falha física do disco.
+
+A reorganização dos manuais não exclui automaticamente documentos antigos das instalações. Os books permanecem sem marca d'água do desenvolvedor.
+
+CHAVE PÚBLICA
+SHA256 do arquivo update-public.xml:
+e2688c331e0814a6fc19592aa4814e6e8e1ace1da76f9ab6ef6f1b54215c6cb6
+
+NUNCA publique chave-privada.dpapi.xml. Ela é vinculada ao usuário Windows que a criou.

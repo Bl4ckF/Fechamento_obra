@@ -57,5 +57,15 @@ const book=env.window.Book,pages=env.window.CroquiPages;
  env.confirm=()=>false;await book.removePoint();assert.equal(book.value().points.length,2);assert.equal(env.S.services.length,2);
  env.confirm=()=>true;await book.removePoint();assert.deepEqual(Array.from(book.value().points,p=>p.id),['p2']);assert.equal(book.value().conductors.length,0);assert.equal(env.S.services[0].entry_id,'e2');assert.equal(env.S.editor.entry_id,'e2');assert.equal(env.S.editing,0);assert.equal(book.value().point_drafts.p1,undefined);
  await book.removePoint();assert.equal(book.value().points.length,0);assert.equal(env.S.services.length,0);assert.equal(env.S.editor,null);
- console.log('OK: migração, páginas independentes, troca após salvamento, falha de gravação, exportação e proteção contra resposta atrasada de outra obra.');
+ // Fotos reconhecidas criam pontos, preservam o ponto ativo e não duplicam anexos.
+ book.load({points:[{id:'existing',number:'2',photos:[],coordinate:'original'}]});
+ const recognized={point:'07',coordinate:'21K 753302 7725693',lat:-20.5,lon:-54.6,photo:{ref:'reader.jpg',stage:'Depois',caption:'Rua'}};
+ await book.importReaderPhotos([recognized,recognized]);
+ assert.equal(book.value().points.length,2);assert.equal(book.value().points[1].photos.length,1);assert.equal(book.activeId(),'existing');
+ await book.importReaderPhotos([{...recognized,point:'2'}]);assert.equal(book.value().points[0].coordinate,'original');
+ const many=Array.from({length:30},(_,i)=>({ref:i+'.jpg'}));book.load({points:[{id:'full',number:'07',photos:many}]});
+ await assert.rejects(book.importReaderPhotos([recognized]),/30 fotos/);assert.equal(book.value().points[0].photos.length,30);
+ env.window.Training={flush:async()=>book.load({points:[]})};
+ await assert.rejects(book.importReaderPhotos([recognized]),/obra mudou/);assert.equal(book.value().points.length,0);
+ console.log('OK: croqui, pontos, importação do leitor, limites, duplicados e proteção contra troca de obra.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

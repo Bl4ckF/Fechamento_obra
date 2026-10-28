@@ -1,5 +1,7 @@
 """Executado pelo BAT fora da pasta do aplicativo, depois do servidor encerrar."""
 import argparse
+import hashlib
+import re
 import json
 import os
 from pathlib import Path
@@ -16,10 +18,16 @@ def validate(archive, expected):
         members = z.infolist()
         if len(members) > 15000 or sum(i.file_size for i in members) > 650 * 1024 * 1024:
             raise ValueError('ZIP muito grande.')
+        seen = set()
         for info in members:
-            import re
+            normalized = info.filename.replace('\\', '/').rstrip('/').casefold()
+            if normalized in seen:
+                raise ValueError('Caminho duplicado dentro do ZIP.')
+            seen.add(normalized)
             p = info.filename.replace('\\', '/')
             parts = p.rstrip('/').split('/')
+            if any(':' in part or part.endswith((' ', '.')) or re.fullmatch(r'(?i)(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?', part) for part in parts):
+                raise ValueError('Caminho incompatível ou inseguro no Windows.')
             if p.startswith('/') or any(v in ('', '.', '..') for v in parts) or re.match(r'^[A-Za-z]:', p):
                 raise ValueError('Caminho inseguro dentro do ZIP.')
             if ((info.external_attr >> 16) & 0o170000) == 0o120000:
@@ -31,7 +39,7 @@ def validate(archive, expected):
             if all(prefix + s in names for s in ('updates.py', 'version.json', 'INICIAR.bat')):
                 meta = json.loads(z.read(prefix + 'version.json'))
                 if str(meta.get('version', '')).lstrip('v') != expected:
-                    raise ValueError('Versão do ZIP diferente da Release.')
+                    raise ValueError('A versão do ZIP difere da Release.')
                 return prefix
     raise ValueError('Arquivos obrigatórios ausentes do ZIP.')
 
@@ -79,10 +87,21 @@ def wait_pid(pid, timeout=100):
     raise TimeoutError('O servidor não encerrou dentro do prazo.')
 
 
-def install(root, archive, expected):
+def install(root, archive, expected, expected_sha256=None):
     """Substitui somente arquivos do programa. Em falha restaura os modificados."""
     root = Path(root).resolve()
     if not (root / 'app.py').exists(): raise ValueError('Pasta de instalação não encontrada.')
+    if expected_sha256 is not None:
+        with open(archive, 'rb') as source:
+            digest = hashlib.sha256()
+            for chunk in iter(lambda: source.read(1024 * 1024), b''): digest.update(chunk)
+        if digest.hexdigest() != expected_sha256:
+            raise ValueError('O pacote mudou depois da verificação de assinatura.')
+    version_file = root / 'version.json'
+    if version_file.exists():
+        current = str(json.loads(version_file.read_text(encoding='utf-8'))['version'])
+        if not re.fullmatch(r'\d+\.\d+\.\d+', expected) or tuple(map(int, expected.split('.'))) <= tuple(map(int, current.split('.'))):
+            raise ValueError('Instalação de versão antiga ou repetida recusada.')
     prefix = validate(archive, expected)
     staging = Path(archive).parent / 'extracao'
     rollback = Path(archive).parent / 'rollback'
@@ -94,6 +113,8 @@ def install(root, archive, expected):
             if info.is_dir() or not info.filename.startswith(prefix): continue
             rel = Path(info.filename[len(prefix):])
             if not allowed(rel): continue
+            if not (root / rel).resolve().is_relative_to(root):
+                raise ValueError('Destino fora da instalação (link local).')
             items.append((info, rel))
         if not items: raise ValueError('O ZIP não contém arquivos para atualizar.')
         for info, rel in items:
@@ -121,14 +142,18 @@ def install(root, archive, expected):
             finally:
                 if temp.exists(): temp.unlink()
             replaced.append(rel)
-    except Exception:
+    except Exception as failure:
+        recovery_errors = []
         for rel in reversed(replaced):
             dest = root / rel
             old = rollback / rel
             try:
                 if old.exists(): shutil.copy2(old, dest)
                 elif dest.exists(): dest.unlink()
-            except OSError: pass
+            except OSError:
+                recovery_errors.append(str(rel))
+        if recovery_errors:
+            raise RuntimeError('Falha na restauração de: ' + ', '.join(recovery_errors) + '. Backup preservado em ' + str(rollback)) from failure
         raise
     return len(items)
 
@@ -166,6 +191,7 @@ def main():
     parser.add_argument('--root', required=True)
     parser.add_argument('--archive', required=True)
     parser.add_argument('--version', required=True)
+    parser.add_argument('--sha256')
     parser.add_argument('--pid', type=int, required=True)
     parser.add_argument('--status-path')
     parser.add_argument('--restart-port', type=int)
@@ -174,7 +200,7 @@ def main():
     try:
         wait_pid(a.pid)
         status(a.status_path, 'installing', 'Instalando os arquivos da atualização.', version=a.version)
-        count = install(a.root, a.archive, a.version)
+        count = install(a.root, a.archive, a.version, a.sha256)
         log.write_text(f'Atualização {a.version}: {count} arquivos instalados.\n', encoding='utf-8')
         print(f'Concluído: {count} arquivos atualizados.', flush=True)
         if a.restart_port:

@@ -7,3 +7,4 @@ __pycache__/
 *.sqlite3*
 backup_fechamento_engelmig*.json
 /dist/
+/web/operations/

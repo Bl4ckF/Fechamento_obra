@@ -1,7 +1,7 @@
 'use strict';
 // Organização da operação e prévia de leitura, sem criar registros de obra.
 (() => {
- const stages=[['work','Dados da obra','Número, data, responsável e local'],['book','Pontos e serviços','Fotos, mão de obra e materiais'],['conductors','Croqui e condutores','Projeto e somagem dos cabos'],['forms','Revisão e envio','Conferência, PDFs e Forms']];
+ const stages=[['work','Dados da obra','Número, data, responsável e local'],['book','Pontos e serviços','Fotos, serviços, materiais e condutores'],['conductors','Edição','CADCraft, PDFCraft e PhotoCraft'],['forms','Revisão e envio','Conferência, PDFs e Forms']];
  let current='work',ready=false,timer,revision=0,running=false,page=0,pages=0,lastHTML='',pinned=false,popup=null;
  const stageButton=(s,i)=>`<button class="stage-link" data-stage="${s[0]}"><span class="stage-number">${i+1}</span><span><strong>${s[1]}</strong><small>${s[2]}</small><em data-stage-state="${s[0]}">A preencher</em></span></button>`;
  function install(){
@@ -12,14 +12,26 @@
    const nav=document.querySelector(`.nav[data-tab="${s[0]}"]`);nav.innerHTML=`<span>0${i+1}</span> ${s[1]}`;
    const tab=$('tab-'+s[0]);tab.insertAdjacentHTML('beforeend',`<div class="stage-footer"><span>Etapa ${i+1} de 4 · Alterações salvas automaticamente</span><div class="actions">${i?`<button class="secondary" data-stage="${stages[i-1][0]}">← ${stages[i-1][1]}</button>`:''}${i<3?`<button class="primary" data-next-stage="${s[0]}" data-destination="${stages[i+1][0]}">Continuar: ${stages[i+1][1]} →</button>`:''}</div></div>`);
   }
-  const mapNav=document.querySelector('.nav[data-tab="map"]');mapNav.querySelector('span').textContent='↗';
-  document.querySelector('[data-tab="forms"]').after(mapNav);
+  const navigation=document.querySelector('nav[aria-label="Menu principal"]');
+  const secondary=document.createElement('details');secondary.id='secondaryNavigation';secondary.className='secondary-navigation';
+  secondary.innerHTML='<summary>Outras opções</summary><div id="secondaryNavigationItems"></div>';
+  const mainTabs=new Set(stages.map(stage=>stage[0]));
+  navigation.querySelectorAll('.nav').forEach(button=>{if(!mainTabs.has(button.dataset.tab))secondary.lastElementChild.append(button);});
+  navigation.append(secondary);
+  try{secondary.open=localStorage.getItem('engelmig-secondary-navigation-open')==='true';}catch{}
+  secondary.addEventListener('toggle',()=>{try{localStorage.setItem('engelmig-secondary-navigation-open',String(secondary.open));}catch{}});
   document.querySelector('#tab-work h1').textContent='Vamos identificar a obra';
   document.querySelector('#tab-work .page-heading p:not(.eyebrow)').textContent='Comece pelos dados que vão identificar o book e os registros da equipe.';
   const metadata=document.querySelector('.metadata');
   metadata.insertAdjacentHTML('beforebegin','<div class="stage-title"><span class="step">1</span><div><h2>Dados da obra</h2><p>Preencha os quatro campos para continuar.</p></div></div>');
   for(const id of ['workOrder','date','responsible','location'])$(id).required=true;
   metadata.insertAdjacentHTML('afterend','<div class="start-guide"><strong>Depois, trabalhe ponto a ponto.</strong><p>Adicione a foto de referência, escolha os serviços e confira os materiais ao lado dela. O book acompanha os lançamentos automaticamente.</p></div>');
+  const conductorPanel=$('pointConductors'),conductorFold=document.createElement('details');conductorFold.className='card conductor-fold';conductorFold.innerHTML='<summary>Trechos de condutores · abrir para preencher</summary>';$('tab-book').querySelector('.stage-footer').before(conductorFold);conductorFold.append(conductorPanel);
+  document.querySelector('#tab-conductors h1').textContent='Edição';
+  document.querySelector('#tab-conductors .page-heading p:not(.eyebrow)').textContent='Edite projetos, PDFs e fotos dentro do Fechamento com CADCraft, PDFCraft e PhotoCraft.';
+  const attachment=document.querySelector('#tab-conductors [data-attachment-target="croqui"]');
+  const attachmentFold=document.createElement('details');attachmentFold.className='editing-attachment';
+  attachmentFold.innerHTML='<summary>Croqui do book · importar e conferir</summary>';attachment.before(attachmentFold);attachmentFold.append(attachment);
   const workspace=$('pointServices');workspace.append(document.querySelector('.workflow'),document.querySelector('.work-items'));
   const bookHeading=document.querySelector('#tab-book .page-heading');
   bookHeading.querySelector('h1').textContent='Pontos e serviços';
@@ -31,7 +43,9 @@
   $('clearEditorChanges').onclick=run(()=>editorAction(clearEditorChanges));
   $('removeSelectedLabor').onclick=run(()=>editorAction(removeSelectedLabor));
   const finder=document.createElement('details');finder.id='laborFinder';finder.className='card labor-finder';finder.open=true;
-  const labor=document.querySelector('.labor-panel');labor.before(finder);finder.innerHTML='<summary>Buscar e adicionar mão de obra <span>código ou descrição</span></summary>';finder.append(labor);
+  const labor=document.querySelector('.labor-panel');labor.before(finder);finder.innerHTML='<summary>Buscar e adicionar mão de obra <span>nome ou código</span></summary>';finder.append(labor);
+  $('laborSearch').placeholder='Digite o nome ou código da mão de obra…';
+  $('laborSearch').setAttribute('aria-label','Buscar mão de obra pelo nome ou código');
   labor.querySelector('h2').textContent='Escolha a mão de obra';
   document.querySelector('.detail-panel h2').textContent='Mão de obra e materiais do ponto';
   document.querySelector('.work-items h2').textContent='Serviços do ponto';
@@ -68,7 +82,7 @@
  function progress(){
   if(!ready)return;
   const b=window.Book.summary(),points=b.points;
-  const flags=[['workOrder','date','responsible','location'].every(id=>$(id).value.trim()),points.length>0&&points.every(p=>p.photos.length&&S.services.some(s=>s.point_id===p.id))&&S.services.every(s=>points.some(p=>p.id===s.point_id))&&!!S.result?.ready,b.croqui_pages.length>0&&b.croqui_pages.every(p=>p.croqui&&!p.image_pending)&&(b.no_conductors||b.conductors.length>0),b.forms_submitted&&!!S.lastSaved];
+  const flags=[['workOrder','date','responsible','location'].every(id=>$(id).value.trim()),points.length>0&&points.every(p=>p.photos.length&&S.services.some(s=>s.point_id===p.id))&&S.services.every(s=>points.some(p=>p.id===s.point_id))&&!!S.result?.ready&&(b.no_conductors||b.conductors.length>0),b.croqui_pages.length>0&&b.croqui_pages.every(p=>p.croqui&&!p.image_pending),b.forms_submitted&&!!S.lastSaved];
   for(const [i,s] of stages.entries()){const node=document.querySelector(`[data-stage="${s[0]}"]`);node.classList.toggle('complete',!!flags[i]);node.classList.toggle('current',current===s[0]);if(current===s[0])node.setAttribute('aria-current','step');else node.removeAttribute('aria-current');node.querySelector('em').textContent=flags[i]?'Preenchido':current===s[0]?'Em preenchimento':'A preencher';}
   const p=points.find(p=>p.id===window.Book.activeId());$('activeServicePoint').textContent=p?'Lançamentos do ponto '+p.number:'Cadastre um ponto para iniciar os lançamentos.';
   document.querySelector('#pointServices .workflow').hidden=!p;
@@ -78,7 +92,7 @@
  }
  function movementClass(value){return value==='RETIRAR'||value==='desativado'?'movement-removed':value==='INSTALAR'||value==='instalado'?'movement-installed':'movement-neutral';}
  function changed(){if(!ready)return;revision++;progress();clearTimeout(timer);timer=setTimeout(refresh,1000);}
- function onTab(name){if(!ready)return;current=name;const operational=stages.some(s=>s[0]===name);$('operationStages').hidden=!operational;$('liveBookPreview').hidden=!operational;
+ function onTab(name){if(!ready)return;current=name;const operational=stages.some(s=>s[0]===name);$('operationStages').hidden=false;$('liveBookPreview').hidden=!operational;
   document.body.classList.toggle('preview-pinned',pinned&&operational);$('pinBookPreview').textContent=pinned?'Soltar prévia':'Fixar ao lado';progress();if(operational){clearTimeout(timer);timer=setTimeout(refresh,100);}requestAnimationFrame(fitPreview);
  }
  function fitPreview(){

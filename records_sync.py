@@ -45,7 +45,8 @@ class RecordSync:
         self.state['running']=False
 
     def status(self):
-        conf=self.settings()
+        conf=dict(self.settings())
+        conf['repository']=conf.get('records_repository') or conf['repository']
         state=dict(self.state)
         if state.get('configuration')!=[conf['repository'],conf.get('sync_branch','registros-materiais')]:
             state.update(error='',last_success=None,pending=None,uploaded=0,downloaded=0)
@@ -149,7 +150,8 @@ class RecordSync:
     def sync_once(self):
         if not self.lock.acquire(blocking=False):return self.status()
         try:
-            conf=self.settings()
+            conf=dict(self.settings())
+            conf['repository']=conf.get('records_repository') or conf['repository']
             if not conf.get('sync_enabled',True):return self.status()
             branch=conf.get('sync_branch','registros-materiais')
             if self.state.get('configuration')!=[conf['repository'],branch]:

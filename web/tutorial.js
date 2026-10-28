@@ -1,0 +1,27 @@
+'use strict';
+(()=>{
+ const operation=location.pathname.startsWith('/poda')?'poda':location.pathname==='/fechamento'||location.pathname==='/index.html'?'fechamento':'inicio';
+ const key='engelmig-tutorial-v1-'+operation;
+ const tours={
+ inicio:[['.operations','Bem-vindo ao programa','PODA é para confeccionar books das atividades de poda e LF (Limpeza de Faixa). FECHAMENTO é para confeccionar books de obras, com pontos, serviços, materiais e croqui.'],['.operations','Seu trabalho fica neste computador','Cada operação guarda seus próprios registros. Use Escolher operação para trocar de área; o programa salva o rascunho antes de sair.']],
+ fechamento:[['.metadata','1 · Identifique a obra','Aqui você confecciona books de obras. Comece por obra/OS, data, responsável e local para identificar o fechamento.','work'],['#addPoint','2 · Cadastre os pontos','Crie um ponto para cada local do serviço. Selecione um ponto para ver as fotos e os serviços associados.','book'],['#pointEditor','3 · Fotos de referência','Anexe fotos, cole com Ctrl+V ou arraste arquivos. Use a foto ao lado como referência para lançar o que foi executado.','book'],['#laborFinder','4 · Mão de obra e materiais','Escolha o serviço, informe estrutura ou transformador, revise quantidades e adicione ao ponto. As cores separam instalação e retirada.','book'],['#pointConductors','5 · Condutores na mesma etapa','Informe os pontos inicial/final, cabo, bitola e comprimento. A somagem documenta os trechos; lance o material também no serviço, sem duplicar quantidades.','book'],['#editingPrograms','6 · Edição integrada','Abra CADCraft, PDFCraft ou PhotoCraft dentro do Fechamento. Os documentos salvos podem ser usados no croqui do book.','conductors'],['#bookChecklist','7 · Revise e finalize','Confira a prévia, gere o book e preencha o Forms. Os rascunhos são automáticos; a conclusão registra a versão da obra.','forms']],
+ poda:[['#book-os','1 · Identifique o book','Esta operação confecciona books de atividades de poda e LF (Limpeza de Faixa). Escolha a atividade e preencha OS, data e quantidade.','book'],['.photo-grid','2 · Fotos antes e depois','Adicione uma foto em cada lado. Você pode colar, arrastar ou selecionar o arquivo.','book'],['#add-record','3 · Adicione a evidência','Confira as coordenadas e os dados e adicione a poda ao book. Repita para os outros pontos.','book'],['#generate-pdf','4 · Gere e confira o PDF','O PDF e as fotos ficam organizados por ano e mês. Na aba Registros você pode abrir e editar o book, preservando a versão anterior.','book']]};
+ let index=0,target,previousTab='',previousFocus;
+ const dialog=document.createElement('dialog');dialog.id='guidedTutorial';dialog.setAttribute('aria-labelledby','tutorialTitle');
+ dialog.innerHTML='<div class="tutorial-speaker">GUIA ENGELMIG <span id="tutorialCount"></span></div><h2 id="tutorialTitle"></h2><p id="tutorialText"></p><div class="tutorial-actions"><button id="tutorialSkip" type="button">Ver depois</button><div><button id="tutorialBack" type="button">← Voltar</button><button id="tutorialNext" type="button">Próximo →</button></div></div>';
+ document.body.append(dialog);
+ const byId=id=>document.getElementById(id);
+ function clear(){target?.classList.remove('tutorial-focus');target=null;}
+ function navigate(name){if(!name)return;if(operation==='fechamento')showTab(name);else if(operation==='poda')tab(name);}
+ function draw(){clear();const [selector,title,text,name]=tours[operation][index];navigate(name);target=document.querySelector(selector);for(let el=target?.parentElement;el;el=el.parentElement)if(el.tagName==='DETAILS')el.open=true;target?.classList.add('tutorial-focus');target?.scrollIntoView({block:'center',behavior:'instant'});byId('tutorialTitle').textContent=title;byId('tutorialText').textContent=text;byId('tutorialCount').textContent=(index+1)+' / '+tours[operation].length;byId('tutorialBack').disabled=index===0;byId('tutorialNext').textContent=index===tours[operation].length-1?'Concluir ✓':'Próximo →';}
+ function close(){clear();try{localStorage.setItem(key,'seen');}catch{}dialog.close();navigate(previousTab);previousFocus?.focus();}
+ function start(){if(document.querySelector('dialog[open]'))return;previousFocus=document.activeElement;previousTab=document.querySelector(operation==='poda'?'.nav-btn.selected':'.nav.active')?.dataset.tab||'';index=0;draw();dialog.showModal();byId('tutorialNext').focus();}
+ byId('tutorialSkip').onclick=close;byId('tutorialBack').onclick=()=>{index=Math.max(0,index-1);draw();};byId('tutorialNext').onclick=()=>{if(index===tours[operation].length-1)close();else{index++;draw();}};dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
+ const help=document.createElement('button');help.id='showTutorial';help.type='button';help.textContent='? Tutorial';help.className='tutorial-replay';help.onclick=start;document.body.append(help);
+ let tries=0;const ready=setInterval(()=>{if((operation==='fechamento'&&(!window.Book||typeof S==='undefined'||!S.token||!byId('editingPrograms')))||(operation==='poda'&&!window.PODA_TOKEN)){if(++tries>120)clearInterval(ready);return;}clearInterval(ready);try{if(localStorage.getItem(key))return;}catch{}start();},250);
+})();
+
+// Operações integradas pertencem à área de trabalho do Fechamento.
+if(location.pathname==='/fechamento'||location.pathname==='/index.html'){
+ const script=document.createElement('script');script.src='/programs.js';document.body.append(script);
+}

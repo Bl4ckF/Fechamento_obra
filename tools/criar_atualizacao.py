@@ -10,6 +10,11 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import zipfile
+import base64
+import xml.etree.ElementTree as ET
+
+# Documentação antiga não deve reaparecer nos pacotes cumulativos.
+LEGACY_DOCS = {'ATUALIZAR.txt', 'PUBLICAR_RELEASE.txt', 'LEIA-ME.txt', 'GIT.txt', 'cls'}
 
 REQUIRED = {'app.py', 'updates.py', 'INICIAR.bat', 'version.json'}
 SKIP_DIRS = {'dados', 'runtime', '.git', '.venv', '__pycache__', 'dist',
@@ -17,10 +22,14 @@ SKIP_DIRS = {'dados', 'runtime', '.git', '.venv', '__pycache__', 'dist',
 
 
 def program_file(name):
+    if name in LEGACY_DOCS:
+        return False
     parts = PurePosixPath(name).parts
     return bool(parts) and not any(p.startswith('.') or p.lower() in SKIP_DIRS for p in parts) and not (
         parts[-1].lower().startswith('diagnostico_instalacoes_') or
         parts[-1].lower() == 'atualizacao.json' or
+        'privada' in parts[-1].lower() or 'private' in parts[-1].lower() or
+        PurePosixPath(name).suffix.lower() in ('.pem', '.key', '.pfx', '.p12') or
         PurePosixPath(name).suffix.lower() in ('.pyc', '.db', '.sqlite3', '.gpkg', '.log')
     )
 
@@ -36,6 +45,14 @@ def build(app, base, output):
     app, base, output = Path(app).resolve(), Path(base).resolve(), Path(output).resolve()
     if output.is_relative_to(app):
         raise ValueError('Salve o pacote fora da pasta do programa.')
+    key_path = app / 'security' / 'update-public.xml'
+    if not key_path.is_file():
+        raise ValueError('Configure security/update-public.xml antes de gerar a versão de transição assinada.')
+    key = ET.fromstring(key_path.read_bytes())
+    if key.tag != 'RSAKeyValue' or {child.tag for child in key} != {'Modulus', 'Exponent'}:
+        raise ValueError('Use somente a chave RSA pública, nunca a privada.')
+    if len(base64.b64decode(key.findtext('Modulus'), validate=True)) < 384:
+        raise ValueError('Use uma chave RSA de pelo menos 3072 bits.')
     with zipfile.ZipFile(base) as original:
         if original.testzip():
             raise ValueError('O ZIP da base está corrompido.')

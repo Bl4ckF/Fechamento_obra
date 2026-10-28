@@ -163,13 +163,13 @@ class RestartFlowTests(unittest.TestCase):
             root=Path(folder)/'Engelmig & espaço % !';root.mkdir()
             (root/'app.py').write_text('old')
             work=Path(folder)/'worker';work.mkdir()
-            state={'available':True,'remote_version':'1.3.6','download_url':'https://github.com/test.zip'}
+            state={'available':True,'remote_version':'1.3.6','download_url':'https://github.com/test.zip','signature_url':'https://github.com/test.zip.sig.json'}
             def download(url,destination):
                 with zipfile.ZipFile(destination,'w') as archive:
                     for name in ('app.py','updates.py','INICIAR.bat'):archive.writestr('repo/'+name,'new')
                     archive.writestr('repo/version.json','{"version":"1.3.6"}')
             windows=SimpleNamespace(name='nt',environ=dict(os.environ),getpid=lambda:12345,replace=os.replace)
-            with patch('updates.os',windows),patch('updates._apply_lock',threading.Lock()),patch('updates.check',return_value=state),patch('updates.download_release',side_effect=download),patch('updates.tempfile.mkdtemp',return_value=str(work)),patch('updates.subprocess.Popen') as launch:
+            with patch('updates.os',windows),patch('updates._apply_lock',threading.Lock()),patch('updates.check',return_value=state),patch('updates.download_release',side_effect=download),patch('updates.tempfile.mkdtemp',return_value=str(work)),patch('updates.update_security.fetch_signature',return_value={}),patch('updates.update_security.verify',return_value='a'*64),patch('updates.subprocess.Popen') as launch:
                 result=updates.apply(root,{},'1.3.5',port=8878,data_dir=root/'dados')
                 self.assertTrue(result['started'])
                 with self.assertRaisesRegex(ValueError,'andamento'):updates.apply(root,{},'1.3.5')

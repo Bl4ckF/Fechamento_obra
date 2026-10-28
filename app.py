@@ -7,6 +7,8 @@ import io
 import json
 import os
 import secrets
+import hashlib
+import re
 import sqlite3
 import threading
 import uuid
@@ -22,16 +24,21 @@ from compositions import base_editor, base_summaries, context_key, memory_payloa
 from book import (DEFAULT_SETTINGS, ASSET_RE, clean_settings, normalize_book, put_media, put_pdf, asset_bytes, summary_text)
 from book_report import book_html, materials_report_html
 import geo
+import location_tools
+import photo_reader
+import resources_manager
+from poda import routes as poda_routes
 from drawing import symbol_catalog
 from symbols import clean_symbol
 import updates
 import learning
 import job_files
 import diagnostics
+import programs
 from records_sync import RecordSync
 
 APP_ID='engelmig-fechamento-v1'
-VERSION='1.3.7'
+VERSION='1.6.2'
 LEARNING_LOCK=threading.RLock()
 TOKEN=secrets.token_urlsafe(32)
 INSTANCE_ID=uuid.uuid4().hex
@@ -51,6 +58,7 @@ def connect():
     db.execute('CREATE TABLE IF NOT EXISTS settings (id TEXT PRIMARY KEY, payload TEXT NOT NULL)')
     db.execute('CREATE TABLE IF NOT EXISTS drafts (id TEXT PRIMARY KEY, payload TEXT NOT NULL)')
     db.execute('CREATE TABLE IF NOT EXISTS work_drafts (id TEXT PRIMARY KEY, payload TEXT NOT NULL)')
+    db.execute('CREATE TABLE IF NOT EXISTS operation_documents (id TEXT PRIMARY KEY, payload TEXT NOT NULL)')
     db.execute('CREATE TABLE IF NOT EXISTS cleared_drafts (id TEXT PRIMARY KEY, cleared_at TEXT NOT NULL)')
     db.execute('CREATE TABLE IF NOT EXISTS custom_symbols (id TEXT PRIMARY KEY, payload TEXT NOT NULL)')
     learning.ensure(db)
@@ -101,7 +109,7 @@ def available_media():
 def backup_payload():
     media=[{'ref':name,'data':base64.b64encode((DATA_DIR/'media'/name).read_bytes()).decode('ascii')} for name in sorted(available_media())]
     with connect() as db:learned=learning.export_records(db)
-    return {'app':APP_ID,'schema':4,'version':VERSION,'created_at':now(),'profiles':records('profiles'),'jobs':records('jobs'),'memories':records('memories'),'memory_history':records('memory_history'),'media':media,'custom_symbols':records('custom_symbols'),'settings':settings(),'drafts':records('drafts'),'work_drafts':records('work_drafts'),'learning':learned}
+    return {'app':APP_ID,'schema':4,'version':VERSION,'created_at':now(),'profiles':records('profiles'),'jobs':records('jobs'),'memories':records('memories'),'memory_history':records('memory_history'),'media':media,'custom_symbols':records('custom_symbols'),'settings':settings(),'drafts':records('drafts'),'work_drafts':records('work_drafts'),'learning':learned,'operation_documents':records('operation_documents')}
 
 def learning_bootstrap():
     with LEARNING_LOCK,connect() as db:
@@ -341,6 +349,9 @@ def restore(payload):
     drafts=payload.get('drafts',[])
     if not isinstance(drafts,list) or len(drafts)>1 or any(not isinstance(d,dict) or d.get('id')!='current' for d in drafts):raise ValueError('Rascunho do backup inválido.')
     work_drafts=payload.get('work_drafts',[])
+    documents=payload.get('operation_documents',[])
+    if not isinstance(documents,list) or len(documents)>10000 or any(not isinstance(item,dict) for item in documents):raise ValueError('Documentos das operações inválidos.')
+    documents=[programs.normalize_document(item) for item in documents]
     if not isinstance(work_drafts,list) or len(work_drafts)>10000 or any(not isinstance(d,dict) or not d.get('draft_id') or d.get('id')!='draft_'+learning.digest(d['draft_id']) for d in work_drafts):raise ValueError('Rascunhos automáticos do backup inválidos.')
     if payload.get('learning'):
         # Validate the whole history in isolation before any restore writes.
@@ -360,7 +371,7 @@ def restore(payload):
         (DATA_DIR/'media'/name).write_bytes(binary)
     # Merge instead of deleting unrelated records. UI asks before replacing matching IDs.
     with connect() as db:
-        for table,items in [('profiles',cleaned),('jobs',checked_jobs),('memories',memories),('memory_history',history),('custom_symbols',checked_symbols)]:
+        for table,items in [('profiles',cleaned),('jobs',checked_jobs),('memories',memories),('memory_history',history),('custom_symbols',checked_symbols),('operation_documents',documents)]:
             for item in items: db.execute(f'INSERT OR REPLACE INTO {table} VALUES (?,?)',(item['id'],json.dumps(item,ensure_ascii=False)))
         if conf:db.execute('INSERT OR REPLACE INTO settings VALUES (?,?)',('config',json.dumps(dict(conf,id='config'),ensure_ascii=False)))
         for item in drafts:db.execute('INSERT OR REPLACE INTO drafts VALUES (?,?)',(item['id'],json.dumps(item,ensure_ascii=False)))
@@ -380,14 +391,31 @@ class Handler(BaseHTTPRequestHandler):
     server_version='FechamentoLocal'
     sys_version=''
     def log_message(self,fmt,*args): pass
+    def send_update_started(self, result):
+        # Once the external worker has started, a disconnected browser must not
+        # prevent shutdown. The worker waits for this process before installing.
+        try:
+            return self.send(result)
+        finally:
+            import time
+            server = self.server
+            threading.Thread(target=lambda: (time.sleep(.8), server.shutdown()), daemon=True).start()
+
     def send(self,data,status=200,kind='application/json; charset=utf-8',filename=None):
         if not isinstance(data,bytes): data=json.dumps(data,ensure_ascii=False).encode('utf-8')
+        if urlparse(self.path).path.startswith('/operations/') and kind.startswith('text/html'):
+            data=data.replace(b'</head>',b'<script src="/operations-bridge.js"></script></head>')
         self.send_response(status); self.send_header('Content-Type',kind)
         self.send_header('Content-Length',str(len(data))); self.send_header('Cache-Control','no-store')
         self.send_header('X-Content-Type-Options','nosniff')
         self.send_header('Referrer-Policy','no-referrer')
-        ancestors="'self'" if urlparse(self.path).path=='/map_v11.html' else "'none'"
-        self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data: blob:; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self'; frame-src 'self'; frame-ancestors "+ancestors+"; base-uri 'none'; form-action 'self'")
+        ancestors="'self'" if urlparse(self.path).path=='/map_v11.html' or urlparse(self.path).path.startswith(('/operations/','/poda/')) else "'none'"
+        module=urlparse(self.path).path.startswith('/operations/')
+        hashes=''
+        if module and kind.startswith('text/html'):
+            scripts=re.findall(rb'<script\b[^>]*>(.*?)</script\s*>',data,re.S|re.I)
+            hashes=''.join(" 'sha256-"+base64.b64encode(hashlib.sha256(script).digest()).decode('ascii')+"'" for script in scripts if script.strip())
+        self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' 'wasm-unsafe-eval'"+hashes+"; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data: blob:; img-src 'self' data: blob: https://server.arcgisonline.com; connect-src 'self' blob: data:; media-src 'self' blob: data:; frame-src 'self'; frame-ancestors "+ancestors+"; base-uri 'none'; form-action 'self'")
         if filename: self.send_header('Content-Disposition',f'attachment; filename="{filename}"')
         self.end_headers();self.wfile.write(data)
     def valid_host(self):
@@ -401,7 +429,16 @@ class Handler(BaseHTTPRequestHandler):
         if not self.valid_origin(): return self.send({'error':'Abra o programa diretamente pelo iniciador.'},403)
         path=urlparse(self.path); q=parse_qs(path.query)
         try:
+            if path.path=='/poda' or path.path.startswith('/poda/'):
+                return poda_routes.get(self,path.path,q,DATA_DIR,TOKEN)
+            if path.path=='/api/photo-reader/image':
+                record,file=photo_reader.read_record(q.get('id',[''])[0],DATA_DIR)
+                return self.send(file.read_bytes(),kind={'.jpg':'image/jpeg','.png':'image/png','.webp':'image/webp'}[file.suffix])
+            if path.path=='/api/resources':return self.send({**resources_manager.status(),'token':TOKEN})
             if path.path=='/api/health': return self.send({'app':APP_ID,'version':VERSION,'instance_id':INSTANCE_ID})
+            if path.path=='/api/programs': return self.send({'programs':programs.catalog(ROOT),'token':TOKEN})
+            if path.path=='/api/operation-documents':
+                return self.send([item for item in records('operation_documents') if item['context']==q.get('context',[''])[0] and item['operation']==q.get('operation',[''])[0]])
             if path.path=='/api/update-status':return self.send(updates.read_status(DATA_DIR))
             if path.path=='/api/bootstrap': return self.send({'catalog':CATALOG,'profiles':records('profiles'),'token':TOKEN,'bases':base_summaries(),'memories':records('memories'),'equipment_references':BASE_DATA['equipment_references'],'version':VERSION,'network_symbols':symbol_catalog(),'custom_symbols':records('custom_symbols'),'settings':settings(),'draft':next(iter(records('drafts')),None),'patterns':learning_bootstrap(),'cleared_draft_ids':cleared_draft_ids()})
             if path.path=='/api/learning/patterns':
@@ -418,7 +455,7 @@ class Handler(BaseHTTPRequestHandler):
             if path.path=='/api/records-sync':return self.send(record_sync().status())
             if path.path=='/api/coordinate':
                 lat,lon=geo.parse_coord(parse_qs(path.query).get('q',[''])[0])
-                return self.send({'lat':lat,'lon':lon,'utm':geo.format_utm(lat,lon)})
+                return self.send({'lat':lat,'lon':lon,**geo.coordinate_formats(lat,lon)})
             if path.path=='/api/geo':return self.send(geo.search(q.get('q',[''])[0],settings()['radius_m']))
             if path.path=='/api/suggest': return self.send(suggestions(q.get('id',[''])[0]))
             if path.path=='/api/profiles': return self.send(records('profiles'))
@@ -440,9 +477,10 @@ class Handler(BaseHTTPRequestHandler):
                 jid=q.get('id',[''])[0]; job=next((j for j in records('jobs') if j['id']==jid),None)
                 if not job: return self.send({'error':'Obra não encontrada.'},404)
                 return self.send(report_csv(job),kind='text/csv; charset=utf-8',filename='mao_de_obra_e_materiais_'+jid[:8]+'.csv')
-            name='index.html' if path.path=='/' else path.path.lstrip('/')
+            if path.path in ('/map_v11.html','/map_v11.js'):return self.send({'error':'Mapa QField retirado. Use Localização / Google Earth.'},404)
+            name='home.html' if path.path=='/' else 'index.html' if path.path=='/fechamento' else path.path.lstrip('/')
             file=(ROOT/'web'/name).resolve();web=(ROOT/'web').resolve()
-            kinds={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.wasm':'application/wasm','.bcmap':'application/octet-stream','.pfb':'application/octet-stream','.ttf':'font/ttf','.icc':'application/octet-stream'}
+            kinds={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8','.wasm':'application/wasm','.bcmap':'application/octet-stream','.pfb':'application/octet-stream','.ttf':'font/ttf','.icc':'application/octet-stream','.svg':'image/svg+xml','.woff':'font/woff','.woff2':'font/woff2','.otf':'font/otf','.webp':'image/webp','.gif':'image/gif','.ico':'image/x-icon','.bin':'application/octet-stream','.txt':'text/plain; charset=utf-8','.webmanifest':'application/manifest+json'}
             if web not in file.parents or not file.is_file() or file.suffix not in kinds:return self.send({'error':'Não encontrado.'},404)
             return self.send(file.read_bytes(),kind=kinds[file.suffix])
         except (ValueError,KeyError) as exc: self.send({'error':str(exc)},400)
@@ -452,11 +490,31 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.valid_host() or not self.valid_origin() or self.headers.get('X-App-Token')!=TOKEN: return self.send({'error':'Recarregue a página para continuar.'},403)
         try:
+            if self.path.startswith('/poda/api/'):
+                return poda_routes.post(self,urlparse(self.path).path,DATA_DIR)
             size=int(self.headers.get('Content-Length','0'))
-            limit=4096 if self.path in ('/api/diagnostics','/api/diagnostics-event') else 300_000_000 if self.path in ('/api/restore','/api/learning/import') else 71_000_000 if self.path=='/api/project-pdf' else 44_000_000 if self.path=='/api/media' else 25_000_000
+            if self.path=='/api/operation-documents' and size>70_001_000:raise ValueError('Documento maior que 50 MB.')
+            limit=70_000_000 if self.path=='/api/photo-reader/zip' else 28_000_000 if self.path=='/api/photo-reader/analyze' else 4096 if self.path in ('/api/diagnostics','/api/diagnostics-event') else 300_000_000 if self.path in ('/api/restore','/api/learning/import') else 71_000_000 if self.path=='/api/project-pdf' else 44_000_000 if self.path=='/api/media' else 25_000_000
+            if self.path=='/api/operation-documents':limit=70_001_000
             if not 0<size<=limit: raise ValueError('Arquivo ou requisição fora do limite permitido.')
             data=json.loads(self.rfile.read(size).decode('utf-8'))
             if not isinstance(data,dict): raise ValueError('Dados inválidos.')
+            if self.path=='/api/resources/check':return self.send(resources_manager.status(force=True))
+            if self.path=='/api/resources/install':return self.send(resources_manager.start(data.get('feature')))
+            if self.path=='/api/operation-documents':
+                document=programs.normalize_document(data)
+                document['saved_at']=now()
+                save_record('operation_documents',document)
+                return self.send({'saved':True,'id':document['id']})
+            if self.path in ('/api/photo-reader/zip','/api/photo-reader/analyze') and resources_manager.running():raise ValueError('Aguarde a instalação dos recursos antes de ler fotos.')
+            if self.path=='/api/photo-reader/zip':return self.send(photo_reader.analyze_zip(data,DATA_DIR))
+            if self.path=='/api/photo-reader/analyze':return self.send(photo_reader.analyze(data,DATA_DIR))
+            if self.path=='/api/photo-reader/group':return self.send(photo_reader.group_photos(data))
+            if self.path=='/api/photo-reader/organize':return self.send(photo_reader.organize(data,DATA_DIR))
+            if self.path=='/api/photo-reader/open':return self.send(photo_reader.open_folder(data,DATA_DIR))
+            if self.path=='/api/photo-reader/import':return self.send(photo_reader.book_photos(data,DATA_DIR))
+            if self.path=='/api/location-search':return self.send(location_tools.suggest(data.get('query','')))
+            if self.path=='/api/earth-import':return self.send(location_tools.import_earth(data.get('name',''),data.get('data','')))
             if self.path=='/api/diagnostics':return self.send(diagnostics.report(DATA_DIR,VERSION),filename='diagnostico_fechamento.json')
             if self.path=='/api/diagnostics-event':
                 category,client=diagnostics.client_event(data)
@@ -491,12 +549,10 @@ class Handler(BaseHTTPRequestHandler):
             if self.path=='/api/update-notice':return self.send(updates.notice(ROOT,settings(),VERSION,force=data.get('force') is True))
             if self.path=='/api/update-apply':
                 backup_database()
+                if resources_manager.running():raise ValueError('Aguarde a instalação dos recursos antes de atualizar o programa.')
                 result=updates.apply(ROOT,settings(),VERSION,port=self.server.server_port,data_dir=DATA_DIR)
                 if result.get('started'):
-                    self.send(result)
-                    import time
-                    threading.Thread(target=lambda: (time.sleep(.8),self.server.shutdown()),daemon=True).start()
-                    return
+                    return self.send_update_started(result)
                 return self.send(result)
             if self.path=='/api/calculate': return self.send(calculate(data.get('services',[])))
             if self.path=='/api/base':return self.send(load_base(data))

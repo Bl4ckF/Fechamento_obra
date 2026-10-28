@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs, urlencode
 from engine import calculate, decimal_text
 from geo import parse_coord, format_utm, coordinate_for_book
+from location_tools import clean_features
 from drawing import clean_drawing
 from repository import normalize_repository
 
@@ -47,6 +48,8 @@ def clean_settings(data):
     out=dict(DEFAULT_SETTINGS)
     out['forms_url']=forms_url(data.get('forms_url',out['forms_url']))
     out['repository']=normalize_repository(data.get('repository',out['repository']))
+    separate=str(data.get('records_repository') or '').strip()
+    out['records_repository']=normalize_repository(separate) if separate else ''
     branch=text(data.get('branch','main'),100)
     if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_./-]*',branch) or '..' in branch:raise ValueError('Nome de branch inválido.')
     out['branch']=branch
@@ -186,7 +189,7 @@ def normalize_book(raw,services,available=None):
         croqui_pages.append(clean_page)
     if not croqui_pages:pending.append('Adicione o croqui da obra.')
     first=croqui_pages[0] if croqui_pages else {}
-    return {'points':clean,'conductors':rows,'conductor_totals':list(totals.values()),'no_conductors':no_conductors,'croqui_pages':croqui_pages,'croqui':first.get('croqui'),'drawing':first.get('drawing'),'forms_submitted':raw.get('forms_submitted') is True,'forms_note':text(raw.get('forms_note'),1000),'pending':pending,'ready':not pending}
+    return {'geography':clean_features(raw.get('geography',[])),'points':clean,'conductors':rows,'conductor_totals':list(totals.values()),'no_conductors':no_conductors,'croqui_pages':croqui_pages,'croqui':first.get('croqui'),'drawing':first.get('drawing'),'forms_submitted':raw.get('forms_submitted') is True,'forms_note':text(raw.get('forms_note'),1000),'pending':pending,'ready':not pending}
 
 def summary_text(job):
     b=job.get('book') or {};lines=[f"OBRA / OS: {job['work_order']}",f"DATA: {job.get('date','')}",f"RESPONSÁVEL: {job.get('responsible','')}",f"LOCAL: {job.get('location','')}",f"PONTOS: {len(b.get('points',[]))}"]

@@ -61,27 +61,73 @@ def coordinate_for_book(point):
     except (ValueError,TypeError):return 'Coordenada fora da faixa UTM ou inválida'
 
 def parse_coord(value):
-    s=str(value).strip().upper().replace('−','-').replace('–','-').replace('˚','°')
-    utm=re.fullmatch(r'(?:UTM\s*)?(?:ZONA\s*)?(\d{1,2})\s*([C-HJ-NP-X])\s*[,;/ ]+\s*(\d{5,7}(?:[.,]\d+)?)\s*[,;/ ]+\s*(\d{1,8}(?:[.,]\d+)?)',s)
-    if utm:return utm_to_latlon(int(utm[1]),utm[2],float(utm[3].replace(',','.')),float(utm[4].replace(',','.')))
-    dms=re.findall(r'(\d{1,3})\s*[°º]\s*(\d{1,2})\s*[\'’′]\s*(\d{1,2}(?:[.,]\d+)?)\s*["”″]?\s*([NSEWO])',s)
-    if len(dms)==2:
-        coords={}
-        for deg,m,sec,hem in dms:
-            m=float(m);sec=float(sec.replace(',','.'))
-            if m>=60 or sec>=60:raise ValueError('Minutos e segundos devem ser menores que 60.')
-            coords['lat' if hem in 'NS' else 'lon']=(float(deg)+m/60+sec/3600)*(-1 if hem in 'SWO' else 1)
-        if len(coords)==2:return valid_coord(coords['lat'],coords['lon'])
-    direction=re.fullmatch(r'([+-]?\d{1,3}(?:[.,]\d+)?)\s*[°º]?\s*([NS])\s*[,;/ ]+\s*([+-]?\d{1,3}(?:[.,]\d+)?)\s*[°º]?\s*([EWO])',s)
-    if direction:return valid_coord(abs(float(direction[1].replace(',','.')))*(-1 if direction[2]=='S' else 1),abs(float(direction[3].replace(',','.')))*(-1 if direction[4] in 'WO' else 1))
-    # Com espaço/ponto e vírgula, a vírgula pode ser separador decimal.
+    """Read WGS84 coordinates; ambiguous projected values are never guessed."""
+    s=str(value).strip().upper().replace('−','-').replace('–','-').replace('˚','°').replace('º','°')
+    s=s.replace('′',"'").replace('’',"'").replace('″','"').replace('”','"')
+    if len(s)>500:raise ValueError('Coordenada muito longa.')
+    number=r'(\d{1,8}(?:[.,]\d+)?)'
+    # Explicit hemisphere is different from a latitude band (21S is band S).
+    hemisphere=re.fullmatch(r'(?:UTM\s*)?(?:FUSO\s*|ZONA\s*)?(\d{1,2})\s*(?:HEMISF[ÉE]RIO\s*)?(SUL|SOUTH|NORTE|NORTH)\s*[,;/ ]+\s*'+number+r'\s*[,;/ ]+\s*'+number,s)
+    if hemisphere:
+        return utm_to_latlon(int(hemisphere[1]),'K' if hemisphere[2] in ('SUL','SOUTH') else 'N',float(hemisphere[3].replace(',','.')),float(hemisphere[4].replace(',','.')))
+    utm=re.fullmatch(r'(?:UTM\s*)?(?:ZONA\s*|FUSO\s*)?(\d{1,2})\s*([C-HJ-NP-X])\s*[,;/ ]+\s*'+number+r'\s*[,;/ ]+\s*'+number,s)
+    if utm:
+        return utm_to_latlon(int(utm[1]),utm[2],float(utm[3].replace(',','.')),float(utm[4].replace(',','.')))
+    # Decimal, degrees/minutes and DMS with prefix or suffix cardinal directions.
+    angle=r'([+-]?\d{1,3}(?:[.,]\d+)?)(?:\s*°\s*(?:(\d{1,2}(?:[.,]\d+)?)\s*\'\s*(?:(\d{1,2}(?:[.,]\d+)?)\s*"?)?)?)?'
+    for pattern, prefix in [(r'([NSEWO])\s*'+angle,True),(angle+r'\s*([NSEWO])',False)]:
+        matches=list(re.finditer(pattern,s))
+        if len(matches)!=2:continue
+        remainder=s
+        for match in reversed(matches):remainder=remainder[:match.start()]+remainder[match.end():]
+        if remainder.strip(' ,;/\t\r\n'):continue
+        result={}
+        for match in matches:
+            g=match.groups()
+            hem,deg,mins,secs=g if prefix else (g[3],g[0],g[1],g[2])
+            d=float(deg.replace(',','.'));m=float((mins or '0').replace(',','.'));sec=float((secs or '0').replace(',','.'))
+            if m>=60 or sec>=60 or (mins and not d.is_integer()) or (secs and not m.is_integer()):
+                raise ValueError('Graus/minutos/segundos inválidos. Minutos e segundos devem ser menores que 60.')
+            if d<0 and hem in 'NE':raise ValueError('Sinal negativo contradiz o hemisfério informado.')
+            axis='lat' if hem in 'NS' else 'lon'
+            if axis in result:raise ValueError('Informe uma latitude (N/S) e uma longitude (E/W/O).')
+            result[axis]=(abs(d)+m/60+sec/3600)*(-1 if hem in 'SWO' else 1)
+        return valid_coord(result['lat'],result['lon'])
+    # Signed DMS/DDM without cardinals: latitude first, longitude second.
+    signed=r'([+-]?\d{1,3})\s*°\s*(\d{1,2}(?:[.,]\d+)?)\s*\'\s*(?:(\d{1,2}(?:[.,]\d+)?)\s*")?'
+    match=re.fullmatch(signed+r'\s*[,;/ ]+\s*'+signed,s)
+    if match:
+        out=[]
+        for offset in (0,3):
+            deg,minute,second=match.groups()[offset:offset+3]
+            m=float(minute.replace(',','.'));sec=float((second or '0').replace(',','.'))
+            if m>=60 or sec>=60 or (second and not m.is_integer()):raise ValueError('Minutos e segundos inválidos.')
+            out.append((abs(float(deg))+m/60+sec/3600)*(-1 if deg.startswith('-') else 1))
+        return valid_coord(*out)
+    if re.search(r'\b(?:LATITUDE|LAT|LONGITUDE|LON|LONG)\b',s):
+        labelled=re.fullmatch(r'(?:LATITUDE|LAT)\s*[:=]?\s*([+-]?\d{1,3}(?:[.,]\d+)?)\s*[,; ]+\s*(?:LONGITUDE|LONG|LON)\s*[:=]?\s*([+-]?\d{1,3}(?:[.,]\d+)?)',s)
+        if not labelled:raise ValueError('Informe LAT primeiro e LON depois, ou use hemisférios N/S/E/W.')
+        return valid_coord(float(labelled[1].replace(',','.')),float(labelled[2].replace(',','.')))
+
     parts=re.split(r'\s+|\s*;\s*',s)
     if len(parts)==2:
         try:return valid_coord(float(parts[0].rstrip(',').replace(',','.')),float(parts[1].replace(',','.')))
         except ValueError:pass
     decimal=re.fullmatch(r'([+-]?\d{1,3}(?:\.\d+)?)\s*,\s*([+-]?\d{1,3}(?:\.\d+)?)',s)
     if decimal:return valid_coord(decimal[1],decimal[2])
-    raise ValueError('Use latitude, longitude (ex.: -20.47, -54.62), graus com S/W ou UTM com faixa (ex.: 21K 753302 7725693).')
+    raise ValueError('Formato não reconhecido. Use UTM com fuso/faixa (21K 753302 7725693), UTM com hemisfério (21 SUL 753302 7725693), decimal (-20.47, -54.62), DMS ou graus/minutos com S/W. Projeções ou datums diferentes precisam de conversão para WGS84.')
+
+
+def coordinate_formats(lat,lon):
+    lat,lon=valid_coord(lat,lon)
+    def dms(value,positive,negative):
+        seconds=round(abs(value)*3600,3)
+        degrees=int(seconds//3600);seconds-=degrees*3600
+        minutes=int(seconds//60);seconds-=minutes*60
+        return f'{degrees}°{minutes:02d}\'{seconds:06.3f}"{negative if value<0 else positive}'
+    return {'decimal':f'{lat:.8f}, {lon:.8f}',
+            'dms':dms(lat,'N','S')+' '+dms(lon,'E','W'),
+            'utm':format_utm(lat,lon) if -80<=lat<=84 else ''}
 
 def distance(a,b,c,d):
     p,q=math.radians(a),math.radians(c)

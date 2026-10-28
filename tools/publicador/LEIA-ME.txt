@@ -1,0 +1,26 @@
+PUBLICADOR AUTOMÁTICO ENGELMIG — REVISÃO 3
+
+1. Extraia este kit em uma NOVA pasta para não misturar os arquivos antigos.
+2. Coloque um ou mais ZIPs de atualização na pasta ZIPS. Também aceita o kit de publicação completo que contém um único ZIP de atualização.
+3. Execute PREPARAR_PUBLICACAO.bat na mesma conta Windows e computador que criaram a chave. Ele lista os pacotes e pergunta qual versão preparar. Aceita 1.5.0, 1_5_0, 1-5-0 e v1.5.0, inclusive com espaços junto dos separadores. Digite 0 para cancelar. Se houver dois arquivos da mesma versão, escolha pelo número da lista.
+4. Ao concluir, abra ATUALIZACOES/vX.Y.Z/ENVIAR_NO_GITHUB. Anexe apenas o ZIP e .zip.sig.json na Release com tag vX.Y.Z.
+
+PASTAS
+ZIPS: entrada, permite manter várias versões. Só o pacote selecionado será processado; os originais permanecem aqui. Se colocar o ZIP junto do BAT, ele será movido para ZIPS automaticamente, sem sobrescrever arquivos.
+ATUALIZACOES: contém as pastas v1.4.0, v1.4.1 etc. Dentro de cada versão, ENVIAR_NO_GITHUB contém somente os dois anexos. VALIDACAO_OK.json e as instruções ficam fora da pasta de anexos.
+
+Uma pasta de versão existente nunca é sobrescrita. Mova a pasta anterior se quiser repetir a mesma versão. A pasta PUBLICACOES de versões antigas do publicador não é alterada.
+
+CORREÇÃO DO BLOQUEIO
+Não usa assinar.ps1 nem PowerShell. Lê a chave DPAPI existente e assina pela API criptográfica nativa do Windows. Nenhuma política de execução é alterada. Requer Python 3.9+ e Windows, sem administrador. Não gera outra chave, não publica automaticamente e nunca copia a chave privada para os anexos.
+
+A chave continua em %LOCALAPPDATA%\EngelmigPublicacao\chave-privada.dpapi.xml, protegida pela conta Windows. Não envie esse arquivo.
+
+VALIDAÇÃO
+Confere manifesto, hashes, caminhos, chave pública e assinatura, incluindo rejeição de adulteração. Ao receber um kit externo, lê somente o ZIP interno; não executa os BATs ou scripts do kit.
+
+A validação não testa instalação, reinício nem ausência de bugs. Teste o aplicativo numa cópia antes de distribuir. Assine somente atualizações de origem conhecida: a assinatura autoriza a distribuição, mas não faz uma auditoria do código.
+
+Testes automatizados de preparação e interfaces criptográficas passaram. A execução real das APIs de assinatura e DPAPI desta revisão ainda deve ser confirmada no Windows.
+
+A seleção usa a versão interna do pacote, não o nome do arquivo. Pontos, sublinhados e hífens na versão digitada são normalizados; a assinatura e os metadados internos do ZIP não são reescritos. Pacotes inválidos são indicados na lista. Se a versão digitada não existir, o programa pede novamente.

@@ -296,7 +296,8 @@ class HTTPTests(unittest.TestCase):
         with urlopen(self.base+'/api/summary?id='+job['id']) as r:self.assertIn('PONTO 1',json.load(r)['text'])
         post('/api/draft',payload)
         with urlopen(self.base+'/api/bootstrap') as r:self.assertEqual(json.load(r)['draft']['work_order'],'QA HTTP v3')
-        with urlopen(self.base+'/map_v11.html') as r:self.assertIn("frame-ancestors 'self'",r.headers['Content-Security-Policy'])
+        with self.assertRaises(HTTPError) as retired: urlopen(self.base+'/map_v11.html')
+        self.assertEqual(retired.exception.code,404)
         for path in ['/book.js','/book.css','/book-print.css','/book-print.js','/assets/engelmig.png','/qfield_manifest.js','/qfield_tiles/t_-2736_-1035.js']:
             with urlopen(self.base+path) as r:self.assertEqual(r.status,200);r.read()
         with urlopen(self.base+'/api/backup') as r:backup=json.load(r)
@@ -370,7 +371,7 @@ class HTTPTests(unittest.TestCase):
         with urlopen(self.base+'/api/bootstrap') as r: bootstrap=json.load(r)
         self.assertEqual(len(bootstrap['catalog']['materials']),2652)
         with urlopen(self.base+'/') as r:
-            self.assertIn(b'Fechamento de obras',r.read());self.assertIn("frame-ancestors 'none'",r.headers['Content-Security-Policy'])
+            self.assertIn(b'FECHAMENTO',r.read());self.assertIn("frame-ancestors 'none'",r.headers['Content-Security-Policy'])
         for path in ['/app.js','/style.css']:
             with urlopen(self.base+path) as r:self.assertEqual(r.status,200);r.read()
         req=Request(self.base+'/api/calculate',data=json.dumps({'services':[service()]}).encode(),headers={'X-App-Token':bootstrap['token']},method='POST')
@@ -383,3 +384,25 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(e.exception.code,403)
 
 if __name__=='__main__':unittest.main()
+
+
+class UpdateShutdownRegressionTests(unittest.TestCase):
+    def test_worker_started_schedules_shutdown_even_when_browser_disconnects(self):
+        from unittest.mock import Mock, patch
+        handler = object.__new__(app.Handler)
+        handler.server = Mock()
+        for error in (None, BrokenPipeError('browser closed'), ConnectionResetError('connection reset')):
+            with self.subTest(error=type(error).__name__):
+                handler.send = Mock(side_effect=error)
+                with patch('app.threading.Thread') as thread:
+                    if error is None:
+                        handler.send_update_started({'started': True})
+                    else:
+                        with self.assertRaises(type(error)):
+                            handler.send_update_started({'started': True})
+                    thread.assert_called_once()
+                    thread.return_value.start.assert_called_once()
+                    self.assertTrue(thread.call_args.kwargs['daemon'])
+                    with patch('time.sleep'):
+                        thread.call_args.kwargs['target']()
+        self.assertEqual(handler.server.shutdown.call_count, 3)

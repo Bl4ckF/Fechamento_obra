@@ -19,6 +19,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 import zipfile
 from repository import repository_name
+import update_security
 
 _notices = {}
 _notice_lock = threading.Lock()
@@ -113,7 +114,9 @@ def latest_release(settings):
     if urlparse(download).scheme != 'https':
         raise ValueError('URL insegura no pacote de atualização.')
     return {'remote_version': tag.lstrip('v'), 'download_url': download, 'tag': tag,
-            'release_url': str(payload.get('html_url', '')), 'asset_name': assets[0]['name'] if assets else ''}
+            'release_url': str(payload.get('html_url', '')), 'asset_name': assets[0]['name'] if assets else '',
+            'signature_url': next((a.get('browser_download_url') for a in payload.get('assets', [])
+                                   if assets and a.get('name') == assets[0]['name'] + '.sig.json'), None)}
 
 
 def latest_tag(settings):
@@ -173,12 +176,14 @@ def check(root, settings, current=None):
 
 
 def download_release(url, destination):
+    update_security.github_url(url)
     target=urlparse(url)
     accept='application/vnd.github+json' if target.hostname=='api.github.com' and '/zipball/' in target.path else 'application/octet-stream'
     req = Request(url, headers={'User-Agent': 'Engelmig-Atualizador', 'Accept': accept})
     received = 0
     with urlopen(req, timeout=50) as response, open(destination, 'wb') as out:
         final = response.geturl()
+        update_security.github_url(final)
         if urlparse(final).scheme != 'https':
             raise ValueError('O download redirecionou para uma conexão insegura.')
         while True:
@@ -194,29 +199,8 @@ def download_release(url, destination):
 
 def valid_archive(archive, expected_version):
     """Compartilhado com o instalador; rejeita ZIP malicioso/incompleto."""
-    with zipfile.ZipFile(archive) as z:
-        members = z.infolist()
-        if len(members) > 15000 or sum(i.file_size for i in members) > 650 * 1024 * 1024:
-            raise ValueError('ZIP muito grande para uma atualização segura.')
-        candidates = []
-        for i in members:
-            path = i.filename.replace('\\', '/')
-            segments = path.rstrip('/').split('/')
-            if path.startswith('/') or any(s in ('', '.', '..') for s in segments) or re.match(r'^[A-Za-z]:', path):
-                raise ValueError('Caminho inseguro dentro da atualização.')
-            if ((i.external_attr >> 16) & 0o170000) == 0o120000:
-                raise ValueError('Atualização contém link simbólico não permitido.')
-            if segments[-1] == 'app.py':
-                candidates.append('/'.join(segments[:-1]))
-        for prefix in sorted(set(candidates), key=len):
-            base = prefix + '/' if prefix else ''
-            required = [base + s for s in ('app.py', 'updates.py', 'INICIAR.bat', 'version.json')]
-            if all(name in z.namelist() for name in required):
-                meta = json.loads(z.read(base + 'version.json').decode('utf-8'))
-                if version_tuple(meta.get('version')) != version_tuple(expected_version):
-                    raise ValueError('A versão do pacote não corresponde à versão publicada. Alinhe app.py, version.json e a tag antes de publicar.')
-                return base
-    raise ValueError('O ZIP não contém app.py, updates.py, INICIAR.bat e version.json na mesma pasta.')
+    from update_worker import validate
+    return validate(archive, expected_version)
 
 
 def read_status(data_dir):
@@ -242,6 +226,10 @@ def apply(root, settings, current, port=8766, data_dir=None):
         raise ValueError(state['error'] + ' ' + state.get('detail', ''))
     if not state['available']:
         return {'started': False, 'updated': False, 'message': 'O aplicativo já está na versão mais recente.'}
+    if version_tuple(state['remote_version']) <= version_tuple(current):
+        raise ValueError('Atualização antiga ou repetida recusada.')
+    if not state.get('signature_url'):
+        raise ValueError('A Release precisa de um ZIP com assinatura .sig.json. Atualização não instalada.')
     root = Path(root).resolve()
     if os.name != 'nt':
         raise ValueError('A instalação automática por BAT está disponível no Windows.')
@@ -254,6 +242,7 @@ def apply(root, settings, current, port=8766, data_dir=None):
         write_status(status_path, 'downloading', 'Baixando o pacote de atualização.', version=state['remote_version'])
         archive = work / 'release.zip'
         download_release(state['download_url'], archive)
+        digest = update_security.verify(archive, update_security.fetch_signature(state['signature_url']), state['remote_version'], root)
         valid_archive(archive, state['remote_version'])
         shutil.copy2(Path(__file__).with_name('update_worker.py'), work / 'update_worker.py')
         # BAT e worker ficam fora da pasta que será substituída.
@@ -265,7 +254,7 @@ def apply(root, settings, current, port=8766, data_dir=None):
             'echo Aguardando o encerramento do aplicativo...\n'
             '"%ENGELMIG_UPDATE_PYTHON%" "%ENGELMIG_UPDATE_WORKER%" '
             '--root "%ENGELMIG_UPDATE_ROOT%" --archive "%ENGELMIG_UPDATE_ARCHIVE%" '
-            '--version "%ENGELMIG_UPDATE_VERSION%" --pid %ENGELMIG_UPDATE_PID% '
+            '--sha256 %ENGELMIG_UPDATE_SHA256% --version "%ENGELMIG_UPDATE_VERSION%" --pid %ENGELMIG_UPDATE_PID% '
             '--status-path "%ENGELMIG_UPDATE_STATUS%" --restart-port %ENGELMIG_UPDATE_PORT%\n'
             'if errorlevel 1 goto ERRO\n'
             'echo Atualizacao instalada. O programa foi reiniciado na mesma aba.\n'
@@ -276,7 +265,7 @@ def apply(root, settings, current, port=8766, data_dir=None):
         )
         env = dict(os.environ, ENGELMIG_UPDATE_PYTHON=str(py), ENGELMIG_UPDATE_WORKER=str(work / 'update_worker.py'),
                    ENGELMIG_UPDATE_ROOT=str(root), ENGELMIG_UPDATE_ARCHIVE=str(archive),
-                   ENGELMIG_UPDATE_VERSION=str(state['remote_version']), ENGELMIG_UPDATE_PID=str(os.getpid()),
+                   ENGELMIG_UPDATE_SHA256=digest, ENGELMIG_UPDATE_VERSION=str(state['remote_version']), ENGELMIG_UPDATE_PID=str(os.getpid()),
                    ENGELMIG_UPDATE_STATUS=str(status_path), ENGELMIG_UPDATE_PORT=str(int(port)),
                    ENGELMIG_DATA_DIR=str(status_path.parent))
         write_status(status_path, 'installing', 'Aguardando o programa encerrar para instalar.', version=state['remote_version'])
